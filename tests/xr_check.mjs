@@ -433,7 +433,7 @@ async function scenarioV07() {
   info('emulated relaxed hand', `palm normal ${R0.normal}, so "palm forward" is ${(-R0.normal[2]).toFixed(2)} (start needs 0.6, keep needs 0.45)`);
 
   // work out the hand turns first, while the hand is empty (snapping the emulated hand would read as a flick)
-  const dm = dummies[0], dir = nrm3(sub3(dm, sh));
+  const dm = dummies.slice().sort((a, b) => Math.abs(Math.atan2(a[0], -a[2])) - Math.abs(Math.atan2(b[0], -b[2])))[0], dir = nrm3(sub3(dm, sh));
   await palmTo('right', add3(sh, mul3(dir, 0.5)), 0.7);
   const fp = await facePalm('right', dir), fpFwd = await facePalm('right', [0, 0, -1]);
   info('palm turned toward the dummy', `${fp.err.toFixed(1)} degrees off; straight ahead ${fpFwd.err.toFixed(1)} degrees off`);
@@ -495,7 +495,55 @@ async function scenarioV07() {
   check(L.includes('JET right') && L.some(l => l.startsWith('JETSTOP right')), 'controllers: trigger pours, letting go stops', L.join(' / '));
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07 })[VER]();
+async function scenarioV08() {
+  await scenarioV07();
+  // each thing that reacts to fire, hit directly by a throw (or a jet) aimed with the game's own ballistics
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; });
+  const st = () => page.evaluate(() => window.__game.world.status());
+  const throwAt = (name, S = 9) => page.evaluate(async ([name, S]) => {
+    const { aimDir } = await import('./src/demo.js');
+    const T = window.__game.world.targets()[name], from = { x: 0.15, y: 1.55, z: -0.3 }, d = aimDir(from, T, S);
+    window.__game.world.addShot(from, { x: d.x * S, y: d.y * S, z: d.z * S }, 'ball');
+  }, [name, S]);
+  const pour = (name, secs) => page.evaluate(async ([name, secs]) => {
+    const T = window.__game.world.targets()[name], from = { x: 0.6, y: 1.0, z: -0.3 };
+    const d = { x: T.x - from.x, y: T.y - from.y, z: T.z - from.z }, l = Math.hypot(d.x, d.y, d.z);
+    for (let i = 0; i < secs * 45; i++) setTimeout(() => window.__game.world.addShot(from, { x: d.x / l * 9, y: d.y / l * 9 + 0.6, z: d.z / l * 9 }, 'jet'), i * 22);
+  }, [name, secs]);
+  let n = (await log()).length, L, S0 = await st();
+  info('props before', JSON.stringify(S0));
+  await throwAt('hay', 8); await wait(2);
+  check((await st()).hay.includes('b'), 'hay: one throw sets a bale alight', (await st()).hay);
+  await wait(3);
+  check(((await st()).hay.match(/b|c/g) || []).length >= 3, 'hay: fire spreads to the neighbouring bales', (await st()).hay);
+  await throwAt('lantern', 8); await wait(2);
+  check(/r|g/.test((await st()).lanterns), 'lanterns: a hit lantern lights up and floats away', (await st()).lanterns);
+  await throwAt('rope', 11); await wait(3.5);
+  check(/^(fall|down)/.test((await st()).bell), 'bell: burning the rope drops the bell', (await st()).bell);
+  await throwAt('fuse', 6); await wait(1);
+  check(!(await st()).fuse.startsWith('0/'), 'fuse: a throw landing on it lights it', (await st()).fuse);
+  await wait(9);
+  L = await since(n);
+  check(L.filter(l => l === 'boom').length >= 1, 'fuse: it burns to the fireworks', `${(await st()).fuse}, rockets ${(await st()).rockets}`);
+  await throwAt('barrel', 8); await wait(2.5);
+  L = await since(n);
+  check(L.includes('explode'), 'barrel: a throw makes it hiss and burst', (await st()).barrels);
+  const lit = () => st().then(x => (x.grass.match(/[12]/g) || []).length);
+  for (let i = 0; i < 40 && (await lit()) > 0; i++) await wait(1);   // let any earlier fire burn out and regrow
+  const g0 = await lit();
+  await throwAt('grass', 6); await wait(1.2);
+  const g1 = await lit(); await wait(2);
+  const g2 = await lit();
+  check(g0 === 0 && g1 > 0 && g2 > g1, 'grass: a throw lights it and the fire spreads', `${g0}, then ${g1}, then ${g2} of 30 cells`);
+  if ((await st()).ice !== 'free') { await pour('ice', 3); await wait(4); }
+  check((await st()).ice === 'free', 'ice: the jet melts it and frees the flame', String((await st()).ice));
+  const src = await page.evaluate(() => window.__game.world.sources().some(s => s.id === 300));
+  check(src, 'ice: the freed flame is a fire you can pull from');
+  await look(-30, -15); await wait(0.3); await shot('v08-props');
+  info('props after', JSON.stringify(await st()));
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));

@@ -24,7 +24,7 @@ A standing-play VR game for Meta Quest, built for the web (WebXR, three.js). No 
    4. Charging a throw
 2. **Water** as the second element, to check the moves carry over.
 3. **Combining elements** (steam and beyond).
-4. **Art direction pass.** Before then, only small art tests that do not touch the mechanics.
+4. **Art direction pass.** Started early in v08 at Faisal's request (a courtyard that feels alive, more things to burn), without touching the mechanics.
 5. **Goals and the wider world.**
 
 ## Versions
@@ -40,12 +40,13 @@ Every version stays playable at `/vNN/`. The newest is the one being worked on; 
 | [v05](https://faisalwya.github.io/elemental-vr/v05/) | Throwing lab. Flame appears in hand; style A hold and release vs B flick, wrist button to switch, aim help off. | B felt natural and fun; A more controlled but repetitive. Two tracking bugs fixed. |
 | [v06](https://faisalwya.github.io/elemental-vr/v06/) | Pulling lab. Reach into near bowls, or pull from 2.5 to 7 m: A grab and yank vs B two-finger draw. Throw is v05's flick. | A, grab and yank, clearly won. |
 | [v07](https://faisalwya.github.io/elemental-vr/v07/) | Flamethrower lab. Holding a flame: arm out, palm forward pours it as a jet (about 3 s). Straw dummies and crates burn. Grab and yank with tighter aiming. | Jet "pretty good"; made less trigger-happy (arm fully out, hand fully open). |
+| [v08](https://faisalwya.github.io/elemental-vr/v08/) | The courtyard. Walled courtyard at dusk (torches, banners, trees, mountains, clouds, fireflies, bats, wind and crickets). New things to burn: hay, lanterns, a bell on a rope, fuse to fireworks, ice with a flame inside, barrels, dry grass. Mechanics unchanged. | Waiting for playtest. |
 
 ## Repo
 
 ```
 index.html     opens the latest version
-vNN/           one folder per version: index.html + src/
+vNN/           one folder per version: index.html + src/ (v08 adds src/scenery.js for the surroundings)
 vendor/        three.js r187 and cannon-es 0.20, shared by all versions
 tests/         unit tests (node) and a headless page check (playwright)
 NOTES.md       dated playtest log and decisions
@@ -56,8 +57,8 @@ No build step: plain ES modules, served as they are by GitHub Pages from `main`.
 
 ## Testing
 
-- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05), `node tests/pull.test.mjs` (v06), `node tests/jet.test.mjs` (v07): game logic, no browser.
-- `python3 tests/page_check.py v07 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
-- `node tests/xr_check.mjs v07` (or v05, v06): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
+- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05), `node tests/pull.test.mjs` (v06), `node tests/jet.test.mjs` (v07, v08): game logic, no browser.
+- `python3 tests/page_check.py v08 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
+- `node tests/xr_check.mjs v08` (or v05 to v07): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
 - Immersive Web Emulator (Chrome extension) to try a version on the laptop without the headset. Its AI agent bridge lets a local coding agent drive the emulated headset.
 - The headset is the only judge of feel.
