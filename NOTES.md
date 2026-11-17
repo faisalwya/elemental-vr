@@ -2,6 +2,31 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-17 · v05, the throwing lab
+
+**Played.** Flame appears in each hand. Style A, hold and release (close, swing, open) vs style B, flick (open hand, leaves at the fastest point of the swing). Wrist button to switch. Aim help off. Targets at 3, 6, 9 m and a crate wall.
+
+**Faisal:**
+- Prefers B: more fluid, movements felt more natural, enjoyed hitting the targets and knocking the boxes.
+- Likes A's deliberateness: felt more in control. But it became repetitive.
+- In A he quickly and intuitively started extending index and middle finger as he let go. It worked well and felt natural.
+- Bug: 3 or 4 times, only on the right hand, the flame hovered in place while the hand was still tracked and moving.
+- When hands were out of sight they behaved oddly and fired sporadically, mainly in B.
+
+**Bugs found and fixed (v05, same day).**
+- Right flame freezing: when a hand drops out and comes back, three.js can put it in the other input slot. If the right hand sat in slot 0 with the left out of view, the empty slot 1 defaulted to "right" and overwrote the real right hand with "not tracked". Only the right hand could suffer. Reproduced and fixed with the emulator check.
+- Sporadic throws out of sight, two guards: a throw only leaves from a hand in front of you (within about 75 degrees of where you face), and a jump faster than 15 m/s between two frames counts as a tracking glitch, not a swing. Also: switching from hands to controllers no longer reads as a flick.
+- New check: `node tests/xr_check.mjs v05` plays the lab in an emulated Quest 3 (hands and controllers) in headless Chrome.
+
+**Claude's read.**
+- B is the throw. It is the one that felt like throwing and was fun on its own.
+- A's control and the two-finger release are worth keeping as ideas, not as a second throw. Closing the hand is a deliberate act, which fits a later mechanic (charging, or a precise aimed throw) better than the basic throw.
+- The out-of-sight firing may have been partly the slot bug (it also made the right hand look "lost" mid-swing, which threw). Check whether it is gone.
+
+**Open questions.**
+- Does B still feel as good with the fixes, and is the sporadic firing gone?
+- Is the 75 degree "in front of you" limit ever blocking a throw you meant?
+
 ## 2026-11-17 · v01 to v04, and a reset
 
 **Background.** The game started as a mobile 3rd-person sandbox (Elemental Proving Ground, Lantern Courtyard) and a mobile format lab (Grain, Rooms, Spirit). The element rules (fire spreads, wet things refuse to burn, water plus fire is steam) held up across all of them. Faisal has a Quest 3, so we tried VR.

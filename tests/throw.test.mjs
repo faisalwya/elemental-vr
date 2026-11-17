@@ -128,4 +128,20 @@ function rig(style, mode = 'hand') {
   assert.equal(r.throws().length, 0);
   ok('switching from hands to controllers is not a flick, even though the position jumps');
 }
+{
+  const r = rig('B');
+  r.hold(READY, OPEN, 0.9);
+  r.frame(P(0.3, 1.25, -0.6), OPEN); r.frame(P(0.3, 1.25, -0.62), OPEN); r.hold(P(0.3, 1.25, -0.62), OPEN, 0.3);
+  assert.equal(r.throws().length, 0); assert.ok(r.types().includes('glitch'));
+  ok('a tracking jump (30 cm in one frame) is a glitch, not a flick');
+  // a swing low beside the hip, well out of view while looking ahead and slightly down
+  const H0 = P(0.4, 0.9, 0.4), H1 = P(0.4, 0.85, 0.0);
+  r.move(P(0.3, 1.25, -0.62), H0, 0.8, OPEN); r.hold(H0, OPEN, 0.3); r.move(H0, H1, 0.1, OPEN); r.hold(H1, OPEN, 0.3);
+  assert.equal(r.throws().length, 0); assert.ok(r.types().includes('blocked'));
+  ok('B: a swing out of sight does not throw');
+  const a = rig('A');
+  a.hold(READY, OPEN, 0.6); a.move(READY, H0, 0.6, OPEN); a.hold(H0, CLOSED, 0.3); a.move(H0, H1, 0.1, CLOSED); a.frame(H1, OPEN);
+  assert.equal(a.throws().length, 0); assert.equal(a.h.state, 'ready');
+  ok('A: opening the hand out of sight keeps the flame');
+}
 console.log(`\n${n} checks passed`);

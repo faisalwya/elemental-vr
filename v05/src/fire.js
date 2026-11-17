@@ -31,6 +31,9 @@ export const FT = {
   forward: 0.2,         // the swing must head at least this much along where you face (cosine), so a fast wind-up is not a throw
   // tracking lost mid-throw (fast swings often do this on Quest): throw with what was measured, if it was fast enough
   lostThrow: true,
+  // tracking glitches, mostly when hands leave the cameras' view (Faisal, v05 playtest: sporadic B throws)
+  maxStep: 15,          // a jump faster than this (m/s) between two frames is a tracking glitch, not a swing
+  viewCone: 0.26,       // a throw only leaves from a hand in front of you: within about 75 degrees of where you face (cosine)
 };
 
 const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
@@ -50,7 +53,16 @@ function shoulderOf(h, head) {
   return { x: hd.x + (h.side === 'left' ? -0.17 : 0.17), y: hd.y - 0.2, z: hd.z + 0.05 };
 }
 
+function inView(h) {
+  if (!h.facing || !h.head) return true;
+  return dot(norm(sub(h.flamePos, h.head)), norm(h.facing)) > FT.viewCone;
+}
 function launch(h, vel, style, how, emit) {
+  if (!inView(h)) {   // out of sight: tracking there is poor, so no throw; the flame stays in the hand
+    h.swing = null; h.state = 'ready'; h.armed = false;
+    emit('blocked', { side: h.side, style, how });
+    return;
+  }
   const handSpeed = len(vel), s = Math.max(FT.minLaunch, Math.min(FT.maxLaunch, handSpeed * FT.throwGain));
   emit('throw', { side: h.side, style, how, pos: copy(h.flamePos), vel: scale(norm(vel), s), handSpeed });
   h.state = 'empty'; h.timer = FT.respawn; h.swing = null; h.armed = false; h.armT = 0;
@@ -63,7 +75,7 @@ function fastestRecent(h, t) {
 
 // inp: { tracked, mode:'hand'|'controller', palm, flamePos, gesture, curl, head, facing (head direction, optional) }
 // style: 'A' | 'B'
-// emit(type, data): spawn, grab, unclench, throw
+// emit(type, data): spawn, grab, unclench, throw, blocked (a throw from out of sight), glitch (a tracking jump)
 export function stepHand(h, inp, dt, t, style, emit) {
   if (!inp || !inp.tracked) {
     // lost mid-throw: A while held, B mid-swing. Throw with what was measured if it was a real swing.
@@ -76,7 +88,11 @@ export function stepHand(h, inp, dt, t, style, emit) {
   }
   if (h.mode !== inp.mode) { h.hist.length = 0; h.vels.length = 0; h.swing = null; }   // hands to controllers: the jump between them is not a swing
   h.mode = inp.mode;
+  const prevP = h.hist.length ? h.hist[h.hist.length - 1] : null;
+  if (prevP && t > prevP.t && len(sub(inp.palm, prevP.p)) / (t - prevP.t) > FT.maxStep) { h.hist.length = 0; h.vels.length = 0; h.swing = null; emit('glitch', { side: h.side }); }
   h.flamePos = copy(inp.flamePos || inp.palm);
+  if (inp.head) h.head = copy(inp.head);
+  if (inp.facing) h.facing = copy(inp.facing);
   h.hist.push({ t, p: copy(inp.palm) });
   while (h.hist.length > 2 && t - h.hist[0].t > FT.velWindow) h.hist.shift();
   const a = h.hist[0], b = h.hist[h.hist.length - 1];

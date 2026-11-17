@@ -239,6 +239,7 @@ function onHandEvent(type, d) {
     case 'spawn': particles.burst('fire', d.pos, 8, 0.5); audio.pop(); buzz(d.side, 0.2, 30); break;
     case 'grab': audio.grab(); buzz(d.side, 0.4, 40); break;
     case 'unclench': break;
+    case 'blocked': case 'glitch': if (window.__log) window.__log.push(`${type.toUpperCase()} ${d.side}${d.style ? ' ' + d.style : ''}`); break;
     case 'throw': {
       const sp = Math.hypot(d.vel.x, d.vel.y, d.vel.z), dir = { x: d.vel.x / sp, y: d.vel.y / sp, z: d.vel.z / sp };
       stats[d.style].throws++;
@@ -300,7 +301,10 @@ renderer.setAnimationLoop(ms => {
   const head = P3(headPos), facing = P3(gazeV);
 
   let inputs = {};
-  if (inVR) { for (const i of [0, 1]) { const r = readXR(i, head, facing); inputs[r.side] = r.inp; } }
+  if (inVR) {
+    // a hand that drops out can come back in the other slot; an empty slot must not overwrite the hand that is there
+    for (const i of [0, 1]) { const r = readXR(i, head, facing); if (r.inp.tracked || !inputs[r.side]) inputs[r.side] = r.inp; }
+  }
   else inputs = demo.update(dt);
 
   // wrist buttons: each one is pressed by the other hand's index fingertip

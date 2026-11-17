@@ -218,8 +218,27 @@ th = L.find(l => l.startsWith('THROW B right flick'));
 check(!!th, 'B: an open-hand swing flicks the flame', th || L.join(' / '));
 info('B throw result', L.filter(l => !l.startsWith('THROW')).join(' / ') || 'no result yet');
 
+// 7b. B: a swing low beside the hip, out of sight, does not throw
+await K('right', { to: [0.4, 0.9, 0.4], dur: 0.8, pose: 'open' }); await K('right', { dur: 0.4 });
+await K('right', { to: [0.4, 0.85, 0.0], dur: 0.08, linear: true }); await K('right', { to: [0.4, 0.85, -0.03], dur: 0.15, linear: true });
+await K('right', { to: [0.25, 1.2, -0.3], dur: 0.8 }); await settle(); await wait(0.5);
+L = await since(n); n += L.length;
+check(!L.some(l => l.startsWith('THROW')), 'B: a swing out of sight, beside the hip, does not throw', L.join(' / '));
+
 // 8. the sign: look left at it
 await look(48, 8); await wait(0.4); await shot('04-sign'); await look(0, 0);
+
+// 8b. hands leave view and come back right first (the right hand can land in the other input slot)
+await K('left', { dur: 0.2, connected: false }); await K('right', { dur: 0.2, connected: false }); await settle(); await wait(0.3);
+await K('right', { dur: 0.2, connected: true, pose: 'open', to: [0.25, 1.2, -0.3] }); await settle(); await wait(1.2);
+const flameAt = () => page.evaluate(() => { const p = window.__game.hands.right.flamePos; return p && [p.x, p.y, p.z]; });
+const fa = await flameAt();
+await K('right', { to: [0.05, 1.35, -0.4], dur: 0.6 }); await settle(); await wait(0.3);
+const fb = await flameAt(), moved = fa && fb ? Math.hypot(fb[0] - fa[0], fb[1] - fa[1], fb[2] - fa[2]) : 0;
+s = await state();
+check(moved > 0.2 && s.right !== 'empty', 'right hand alone after tracking loss: its flame follows the hand', `flame moved ${moved.toFixed(2)} m for a 0.32 m hand move, right ${s.right}`);
+await K('left', { dur: 0.2, connected: true, pose: 'open', to: [-0.25, 1.2, -0.3] }); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.4 }); await settle(); await wait(1);
+L = await since(n); n += L.length;
 
 // 9. controllers: grip to hold, swing, let go; A button switches style
 await page.evaluate(() => { window.__xr.primaryInputMode = 'controller'; });

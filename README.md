@@ -37,7 +37,7 @@ Every version stays playable at `/vNN/`. The newest is the one being worked on; 
 | [v02](https://faisalwya.github.io/elemental-vr/v02/) | Fire only. Carry on open palm, push/fist/pinch/palm-down gestures, physics fire yard with seven targets. | Pick-up and drop choppy; thrown fire invisible (bug). |
 | [v03](https://faisalwya.github.io/elemental-vr/v03/) | Reach to pull fire, palm-down drop removed, fire visible in flight. | Better; pull and throw still need work. |
 | [v04](https://faisalwya.github.io/elemental-vr/v04/) | Lock-on pull, swing throw, tuning board, practice discs. | Not enjoyable; changes not noticeable. See NOTES.md. |
-| [v05](https://faisalwya.github.io/elemental-vr/v05/) | Throwing lab. Flame appears in hand; style A hold and release vs B flick, wrist button to switch, aim help off. | Waiting for playtest. |
+| [v05](https://faisalwya.github.io/elemental-vr/v05/) | Throwing lab. Flame appears in hand; style A hold and release vs B flick, wrist button to switch, aim help off. | B felt natural and fun; A more controlled but repetitive. Two tracking bugs fixed. |
 
 ## Repo
 
