@@ -13,9 +13,10 @@ Newest first. What was played, what Faisal felt, what we decided.
 - Throw = v05's flick, kept.
 - So the core loop so far: reach, grab, yank, flick.
 
-**Still open (not yet answered).**
-- Was it clear which fire you were aiming at before grabbing?
-- Is reaching into a near bowl still worth having next to the pull?
+**Follow-up answers.**
+- Aiming was mostly clear, but a few times he meant one fire and it pulled from another. Likely causes (Claude): the aim is the shoulder-to-hand line, not where the palm or eyes point; the big near bowls have wide aim zones and can steal a low aim; and a fire seen up to 0.25 s before closing can still be grabbed. Fix in the next version: near bowls are reach-in only, a narrower aim zone, and grab only the fire that is glowing at the moment the hand closes.
+- Keep reaching into a near bowl to take a flame.
+- Faisal's idea for next: flamethrower hands, open palm forward.
 
 ## 2026-11-17 · v05, the throwing lab
 
