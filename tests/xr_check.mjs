@@ -478,7 +478,7 @@ async function scenarioV07() {
 
   // 5. grab and yank from the 4.5 m fire, then pour the pulled flame
   const fb = bowls.find(b => !b.near && Math.abs(b.d - 4.5) < 0.1), fdir = nrm3(sub3(fb.pos, sh));
-  await palmTo('right', add3(sh, mul3(fdir, 0.5)), 0.4);   // still holding the flame from step 4: pour it out first
+  await palmTo('right', add3(sh, [0, -0.05, -0.5]), 0.6);   // still holding the flame from step 4: pour it out straight ahead first
   await turn('right', fpFwd.q); await wait(3.4); await turn('right', [0, 0, 0, 1]);
   await palmTo('right', add3(sh, mul3(fdir, 0.5)), 0.6, 'open'); await wait(0.4);
   await K('right', { dur: 0.3, pose: 'fist' }); await settle(); await wait(0.2);

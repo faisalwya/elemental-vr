@@ -27,11 +27,13 @@ export const FT = {
   afterThrow: 0.35,
   grabCurl: 0.078, releaseCurl: 0.088,
   // jet
-  jetFacing: 0.6,       // palm normal along where you face (cosine) to start; about 53 degrees
+  jetFacing: 0.7,       // palm normal along where you face (cosine) to start; about 45 degrees (was 0.6; Faisal: triggered too quickly)
   jetKeep: 0.45,        // keeps going until it drops below this (about 63 degrees; a relaxed palm-down hand is about 0.37)
-  jetOut: 0.22,         // hand at least this far in front of the shoulder (along where you face)
+  jetOut: 0.38,         // to start: hand at least this far in front of the shoulder (along where you face), i.e. arm fully out (was 0.22)
+  jetReach: 0.45,       // and at least this far from the shoulder
+  jetKeepOut: 0.25,     // once pouring, the arm may bend back to this before it stops
   jetStill: 1.2,        // and moving slower than this (m/s)
-  jetHold: 0.2,         // seconds in that pose before the jet starts
+  jetHold: 0.35,        // seconds in that pose before the jet starts (was 0.2)
   jetGrace: 0.12,       // the pose may flicker off this long without stopping the jet
   fuel: 3,              // seconds of jet in one flame
   jetRate: 45, jetSpeed: 9,
@@ -127,8 +129,10 @@ export function stepHand(h, inp, dt, t, sources, emit) {
 
   // the jet pose: arm out in front, palm (controller: trigger) forward, hand fairly still, not closed
   const palmFwd = inp.mode === 'controller' ? (g === 'pinch' ? 1 : -1) : dot(norm(inp.normal), fwd);
-  const out = dot(sub(inp.palm, shoulder), fwd);
-  const jetPose = k => palmFwd > k && !h.closed && (inp.mode === 'controller' || out > FT.jetOut);
+  // to start: arm fully out and hand fully open (not just relaxed); to keep going it may ease off a little
+  const out = dot(sub(inp.palm, shoulder), fwd), extended = out > FT.jetOut && dist(inp.palm, shoulder) > FT.jetReach;
+  const openHand = g === 'open' || (inp.curl !== undefined && inp.curl > 0.085);
+  const jetPose = k => palmFwd > k && !h.closed && (inp.mode === 'controller' || (k === FT.jetFacing ? extended && openHand : out > FT.jetKeepOut));
 
   switch (h.state) {
     case 'empty': {

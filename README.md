@@ -39,7 +39,7 @@ Every version stays playable at `/vNN/`. The newest is the one being worked on; 
 | [v04](https://faisalwya.github.io/elemental-vr/v04/) | Lock-on pull, swing throw, tuning board, practice discs. | Not enjoyable; changes not noticeable. See NOTES.md. |
 | [v05](https://faisalwya.github.io/elemental-vr/v05/) | Throwing lab. Flame appears in hand; style A hold and release vs B flick, wrist button to switch, aim help off. | B felt natural and fun; A more controlled but repetitive. Two tracking bugs fixed. |
 | [v06](https://faisalwya.github.io/elemental-vr/v06/) | Pulling lab. Reach into near bowls, or pull from 2.5 to 7 m: A grab and yank vs B two-finger draw. Throw is v05's flick. | A, grab and yank, clearly won. |
-| [v07](https://faisalwya.github.io/elemental-vr/v07/) | Flamethrower lab. Holding a flame: arm out, palm forward pours it as a jet (about 3 s). Straw dummies and crates burn. Grab and yank with tighter aiming. | Waiting for playtest. |
+| [v07](https://faisalwya.github.io/elemental-vr/v07/) | Flamethrower lab. Holding a flame: arm out, palm forward pours it as a jet (about 3 s). Straw dummies and crates burn. Grab and yank with tighter aiming. | Jet "pretty good"; made less trigger-happy (arm fully out, hand fully open). |
 
 ## Repo
 

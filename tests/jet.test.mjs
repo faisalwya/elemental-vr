@@ -35,7 +35,7 @@ function rig(mode = 'hand') {
   r.hold(OUT, OPEN, 0.5, UP);
   assert.equal(r.h.state, 'ready'); assert.equal(r.count('jetDrop'), 0);
   ok('carrying a flame on an upturned palm does not pour');
-  r.hold(OUT, OPEN, 0.1, FWD);
+  r.hold(OUT, OPEN, 0.2, FWD);
   assert.equal(r.h.state, 'ready');
   r.hold(OUT, OPEN, 0.2, FWD);
   assert.equal(r.h.state, 'jet'); assert.ok(r.count('jetStart') === 1);
@@ -48,13 +48,13 @@ function rig(mode = 'hand') {
   r.hold(OUT, OPEN, 0.3, UP);
   assert.equal(r.h.state, 'ready'); assert.ok(r.h.fuel > 1.5 && r.h.fuel < 2.2, r.h.fuel);
   ok('turning the palm away stops it and the rest of the flame stays in the hand');
-  r.hold(OUT, OPEN, 0.3, FWD); r.hold(OUT, OPEN, 2.5, FWD);
+  r.hold(OUT, OPEN, 0.4, FWD); r.hold(OUT, OPEN, 2.5, FWD);
   assert.equal(r.h.state, 'empty'); assert.ok(r.ev.some(e => e.type === 'jetStop' && e.out));
   ok('pouring until the fuel runs out empties the hand');
 }
 {
   const r = rig(); r.take();
-  r.hold(OUT, OPEN, 0.3, FWD); r.hold(OUT, CLOSED, 0.3, FWD);
+  r.hold(OUT, OPEN, 0.4, FWD); r.hold(OUT, CLOSED, 0.3, FWD);
   assert.equal(r.h.state, 'ready');
   ok('closing the hand stops the jet');
 }
@@ -68,6 +68,22 @@ function rig(mode = 'hand') {
   r.move(WIND, P(0.3, 1.45, -0.4), 0.1, OPEN, FWD); r.move(P(0.3, 1.45, -0.4), P(0.3, 1.42, -0.48), 0.15, OPEN, FWD);
   assert.equal(r.count('jetStart'), 0); assert.equal(r.count('throw'), 1);
   ok('a flick with the palm forward still throws and never turns into a jet');
+}
+{
+  const r = rig(); r.take();
+  const HALF = P(0.2, 1.3, -0.2);   // elbow bent, hand only 0.25 m out
+  r.move(OUT, HALF, 0.4, OPEN); r.hold(HALF, OPEN, 0.8, FWD);
+  assert.equal(r.count('jetStart'), 0);
+  r.move(HALF, OUT, 0.4, OPEN); r.hold(OUT, 0.08, 0.8, FWD);
+  assert.equal(r.count('jetStart'), 0);
+  r.hold(OUT, OPEN, 0.25, FWD);
+  assert.equal(r.count('jetStart'), 0);
+  r.hold(OUT, OPEN, 0.2, FWD);
+  assert.equal(r.count('jetStart'), 1);
+  ok('the jet needs the arm fully out, the hand fully open, and the pose held about a third of a second');
+  r.move(OUT, P(0.2, 1.33, -0.35), 0.3, OPEN, FWD);
+  assert.equal(r.h.state, 'jet');
+  ok('once pouring, the arm can ease back a little without stopping');
 }
 {
   const r = rig();

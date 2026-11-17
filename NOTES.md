@@ -2,6 +2,21 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-17 · v07, the flamethrower lab
+
+**Played.** Grab and yank (tighter aiming, near bowls reach-in only), flick, and the new jet: holding a flame, arm out, palm forward pours it out for about 3 s. Straw dummies and the crate wall burn.
+
+**Faisal:**
+- Jet: "pretty good". Sometimes it triggered too quickly; it should be less sensitive and need the palm and arm fully extended. It never triggered when it should not have.
+- Asked whether the two closest fire pots were deliberately off for pulling from a distance (yes: the v06 aiming fix).
+- Wants the world to feel alive rather than an empty room, and more interesting things to use fire on.
+
+**Changed in v07 (same day).** The jet now needs the arm fully out (hand at least 0.38 m in front of the shoulder and 0.45 m from it), the hand fully open (not just relaxed), the palm squarely forward (about 45 degrees, was 53) and the pose held 0.35 s (was 0.2). Once pouring, the arm may ease back a little.
+
+**Decisions.**
+- Jet stays: palm forward, held flame is the fuel.
+- Next (v08): the world. A place that feels alive and more things that react to fire. This brings the art and world work forward on purpose; the mechanics stay as they are.
+
 ## 2026-11-17 · v06, the pulling lab
 
 **Played.** No flame appears on its own. Reach into a near bowl, or pull from fires at 2.5, 4.5 and 7 m. Style A, grab and yank (open hand toward the fire until it glows, close to grab, yank the fist back) vs style B, two-finger draw (point index and middle at the fire, draw the hand back). Throw is v05's flick.
