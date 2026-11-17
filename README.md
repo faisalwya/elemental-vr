@@ -37,6 +37,7 @@ Every version stays playable at `/vNN/`. The newest is the one being worked on; 
 | [v02](https://faisalwya.github.io/elemental-vr/v02/) | Fire only. Carry on open palm, push/fist/pinch/palm-down gestures, physics fire yard with seven targets. | Pick-up and drop choppy; thrown fire invisible (bug). |
 | [v03](https://faisalwya.github.io/elemental-vr/v03/) | Reach to pull fire, palm-down drop removed, fire visible in flight. | Better; pull and throw still need work. |
 | [v04](https://faisalwya.github.io/elemental-vr/v04/) | Lock-on pull, swing throw, tuning board, practice discs. | Not enjoyable; changes not noticeable. See NOTES.md. |
+| [v05](https://faisalwya.github.io/elemental-vr/v05/) | Throwing lab. Flame appears in hand; style A hold and release vs B flick, wrist button to switch, aim help off. | Waiting for playtest. |
 
 ## Repo
 
@@ -53,7 +54,7 @@ No build step: plain ES modules, served as they are by GitHub Pages from `main`.
 
 ## Testing
 
-- `node tests/gestures.test.mjs` and `node tests/fire.test.mjs`: game logic, no browser.
-- `python3 tests/page_check.py v04 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
+- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05): game logic, no browser.
+- `python3 tests/page_check.py v05 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
 - Immersive Web Emulator (Chrome extension) to try a version on the laptop without the headset. Its AI agent bridge lets a local coding agent drive the emulated headset.
 - The headset is the only judge of feel.
