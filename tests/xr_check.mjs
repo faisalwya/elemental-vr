@@ -67,12 +67,15 @@ const PUPPET = `
       const k = q[0], inp = input(side);
       if (!k.started) {
         k.started = true; k.t = 0; from[side] = inp.position.clone();
+        const q0 = inp.quaternion; k.q0 = [q0.x, q0.y, q0.z, q0.w];
+        if (k.q && k.q0[0] * k.q[0] + k.q0[1] * k.q[1] + k.q0[2] * k.q[2] + k.q0[3] * k.q[3] < 0) k.q = k.q.map(x => -x);
         if (k.pose && inp.poseId !== undefined) inp.poseId = k.pose;
         if (k.buttons) for (const id in k.buttons) inp.updateButtonValue(id, k.buttons[id]);
         if (k.connected !== undefined) inp.connected = k.connected;
       }
       k.t += dt;
       const f = Math.min(1, k.t / (k.dur || 0.0001)), e = k.linear ? f : f * f * (3 - 2 * f);
+      if (k.q) { const q = k.q0.map((x, i) => x + (k.q[i] - x) * e), l = Math.hypot(...q); inp.quaternion.set(q[0] / l, q[1] / l, q[2] / l, q[3] / l); }
       if (k.to) { const a = from[side]; inp.position.set(a.x + (k.to[0] - a.x) * e, a.y + (k.to[1] - a.y) * e, a.z + (k.to[2] - a.z) * e); }
       if (f >= 1) { q.shift(); if (k.then) k.then(); }
     }
@@ -122,7 +125,7 @@ const settle = async (ms = 60000) => { await page.waitForFunction(() => window._
 const wait = async secs => { await K('left', { dur: secs }); await settle(); };
 const log = () => page.evaluate(() => window.__log.slice());
 const since = async n => (await log()).slice(n);
-const state = () => page.evaluate(() => ({ style: window.__game.style(), left: window.__game.hands.left.state, right: window.__game.hands.right.state, stats: JSON.parse(JSON.stringify(window.__game.stats)), gt: window.__gt, head: window.__head }));
+const state = () => page.evaluate(() => ({ style: window.__game.style ? window.__game.style() : null, left: window.__game.hands.left.state, right: window.__game.hands.right.state, stats: JSON.parse(JSON.stringify(window.__game.stats)), gt: window.__gt, head: window.__head }));
 // what the game's own hand reader makes of the emulated joints
 const read = side => page.evaluate(async s => {
   const { readHand } = await import('./src/gestures.js');
@@ -391,7 +394,108 @@ async function scenarioV06() {
   await K('right', { dur: 0.2, buttons: { squeeze: 0 } }); await settle();
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06 })[VER]();
+async function scenarioV07() {
+  const bowls = await page.evaluate(() => window.__game.world.bowls.map(b => ({ id: b.id, pos: [b.pos.x, b.pos.y, b.pos.z], r: b.r, near: b.near, d: b.d })));
+  const dummies = await page.evaluate(() => window.__game.world.dummies.map(d => [d.center.x, d.center.y, d.center.z]));
+  const hand = side => page.evaluate(s => { const h = window.__game.hands[s]; return { state: h.state, fuel: +h.fuel.toFixed(2), target: h.target && h.target.id }; }, side);
+  const qMul = (a, b) => [a[3] * b[0] + a[0] * b[3] + a[1] * b[2] - a[2] * b[1], a[3] * b[1] - a[0] * b[2] + a[1] * b[3] + a[2] * b[0], a[3] * b[2] + a[0] * b[1] - a[1] * b[0] + a[2] * b[3], a[3] * b[3] - a[0] * b[0] - a[1] * b[1] - a[2] * b[2]];
+  const qAxis = (ax, ang) => [ax[0] * Math.sin(ang / 2), ax[1] * Math.sin(ang / 2), ax[2] * Math.sin(ang / 2), Math.cos(ang / 2)];
+  const setQ = (side, q) => page.evaluate(([s, q]) => { const i = window.__xr.primaryInputMode === 'hand' ? window.__xr.hands[s] : window.__xr.controllers[s]; i.quaternion.set(...q); }, [side, q]);
+  const sub3 = (a, b) => [a[0] - b[0], a[1] - b[1], a[2] - b[2]], add3 = (a, b) => [a[0] + b[0], a[1] + b[1], a[2] + b[2]], mul3 = (a, k) => a.map(x => x * k);
+  const nrm3 = a => mul3(a, 1 / Math.hypot(...a));
+  const palmTo = async (side, p, dur, pose) => {
+    const r = await read(side), hp = await handPos(side), off = r ? sub3(r.palm, hp) : [0, 0, 0];
+    await K(side, Object.assign({ to: sub3(p, off), dur }, pose ? { pose } : {})); await settle();
+  };
+  // turn the hand so its palm faces a direction: find the pitch that turns the palm forward, then yaw toward the target
+  const turn = async (side, q, dur = 0.4) => { await K(side, { q, dur }); await settle(); };
+  const facePalm = async (side, dir) => {
+    let best = null;
+    for (let deg = -150; deg <= 150; deg += 15) {
+      const q = qAxis([1, 0, 0], deg * Math.PI / 180); await setQ(side, q); await wait(0.06);
+      const r = await read(side); const c = -r.normal[2];
+      if (!best || c > best.c) best = { q, c, n: r.normal };
+    }
+    const yaw = Math.atan2(-dir[0], -dir[2]) - Math.atan2(-best.n[0], -best.n[2]);
+    const q = qMul(qAxis([0, 1, 0], yaw), best.q); await setQ(side, q); await wait(0.1);
+    const r = await read(side);
+    return { q, normal: r.normal, err: Math.acos(Math.max(-1, Math.min(1, r.normal[0] * dir[0] + r.normal[1] * dir[1] + r.normal[2] * dir[2]))) * 180 / Math.PI };
+  };
+  const sh = [0.17, 1.4, 0.05];
+  const nb = bowls.find(b => b.near && b.pos[0] > 0);
+  const takeNear = async () => { await setQ('right', [0, 0, 0, 1]); await palmTo('right', add3(nb.pos, [0, 0.25, 0.1]), 0.6, 'open'); await palmTo('right', add3(nb.pos, [0, 0.03, 0]), 0.5); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.6 }); await settle(); };
+
+  // 1. arrive
+  await K('left', { to: [-0.25, 1.2, -0.3], dur: 0.3, pose: 'open' }); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.3, pose: 'open' });
+  await settle(); await wait(1);
+  let n = (await log()).length, L;
+  const R0 = await read('right');
+  info('emulated relaxed hand', `palm normal ${R0.normal}, so "palm forward" is ${(-R0.normal[2]).toFixed(2)} (start needs 0.6, keep needs 0.45)`);
+
+  // work out the hand turns first, while the hand is empty (snapping the emulated hand would read as a flick)
+  const dm = dummies[0], dir = nrm3(sub3(dm, sh));
+  await palmTo('right', add3(sh, mul3(dir, 0.5)), 0.7);
+  const fp = await facePalm('right', dir), fpFwd = await facePalm('right', [0, 0, -1]);
+  info('palm turned toward the dummy', `${fp.err.toFixed(1)} degrees off; straight ahead ${fpFwd.err.toFixed(1)} degrees off`);
+  await setQ('right', [0, 0, 0, 1]); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5 }); await settle(); await wait(0.3);
+  n = (await log()).length;
+
+  // 2. take, then pour at the nearest dummy: arm out toward it, palm turned to face it
+  await takeNear();
+  L = await since(n); n += L.length;
+  check(L.includes('TAKE right reach'), 'reaching into a near bowl takes a flame', L.join(' / '));
+  await palmTo('right', add3(sh, mul3(dir, 0.5)), 0.7);
+  await wait(0.4);
+  check(!(await since(n)).some(l => l.startsWith('JET')), 'arm out with the palm still down does not pour');
+  await turn('right', fp.q);
+  await wait(0.4); await look(-15, 0); await wait(0.2); await shot('v07-01-jet'); await look(0, 0);
+  await wait(2.5);
+  L = await since(n); n += L.length;
+  check(L.includes('JET right'), 'holding a flame, arm out, palm turned forward: the jet starts', L.join(' / '));
+  check(L.some(l => l.startsWith('ignite dummy')), 'the jet sets the straw dummy alight', L.join(' / '));
+  check(L.some(l => /^JETSTOP right .* out$/.test(l)) && (await hand('right')).state === 'empty', 'pouring until the flame is used up empties the hand', L.filter(l => l.startsWith('JET')).join(' / '));
+
+  // 3. take again, pour briefly, turn the palm back down: stops, rest stays; then flick it
+  await takeNear();
+  await palmTo('right', add3(sh, mul3(dir, 0.5)), 0.7); await turn('right', fp.q); await wait(0.9);
+  await turn('right', [0, 0, 0, 1]); await wait(0.4);
+  L = await since(n); n += L.length;
+  let h = await hand('right');
+  check(L.some(l => /^JETSTOP right [\d.]+ s$/.test(l)) && h.state === 'ready' && h.fuel > 1, 'turning the palm back down stops the jet and keeps the rest of the flame', `${L.filter(l => l.startsWith('JET')).join(' / ')}; ${JSON.stringify(h)}`);
+  await K('right', { to: [0.25, 1.55, 0.1], dur: 0.7 }); await K('right', { dur: 0.3 });
+  await K('right', { to: [0.25, 1.45, -0.35], dur: 0.1, linear: true }); await K('right', { to: [0.25, 1.43, -0.4], dur: 0.15, linear: true });
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.6 }); await settle(); await wait(0.5);
+  L = await since(n); n += L.length;
+  check(L.some(l => l.startsWith('THROW right flick')) && !L.some(l => l.startsWith('JET')), 'the rest of the flame can still be flicked', L.join(' / '));
+
+  // 4. overhand wind-up with the palm forward beside the head: no jet
+  await takeNear();
+  const WIND = [0.28, 1.62, 0.08];
+  await palmTo('right', WIND, 0.6); await turn('right', fpFwd.q); await wait(0.8);
+  L = await since(n); n += L.length;
+  check(!L.some(l => l.startsWith('JET')), 'palm forward beside the head (an overhand wind-up) does not pour', L.join(' / '));
+  await turn('right', [0, 0, 0, 1]); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5 }); await settle();
+
+  // 5. grab and yank from the 4.5 m fire, then pour the pulled flame
+  const fb = bowls.find(b => !b.near && Math.abs(b.d - 4.5) < 0.1), fdir = nrm3(sub3(fb.pos, sh));
+  await palmTo('right', add3(sh, mul3(fdir, 0.5)), 0.4);   // still holding the flame from step 4: pour it out first
+  await turn('right', fpFwd.q); await wait(3.4); await turn('right', [0, 0, 0, 1]);
+  await palmTo('right', add3(sh, mul3(fdir, 0.5)), 0.6, 'open'); await wait(0.4);
+  await K('right', { dur: 0.3, pose: 'fist' }); await settle(); await wait(0.2);
+  await palmTo('right', add3(sh, add3(mul3(fdir, 0.12), [0, -0.08, 0])), 0.2, 'fist'); await wait(1);
+  L = await since(n); n += L.length;
+  check(L.includes('TAKE right pull'), 'grab and yank still pulls from a far fire', L.join(' / '));
+
+  // 6. controllers: hold the trigger to pour
+  await K('right', { dur: 0.2, pose: 'open' }); await settle();
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'controller'; }); await wait(1);
+  await K('right', { to: [0.55, 1.0, -0.55], dur: 1.2 }); await K('right', { to: [0.2, 1.3, -0.45], dur: 0.8 }); await settle(); await wait(0.3);
+  await K('right', { dur: 0.8, buttons: { trigger: 1 } }); await K('right', { dur: 0.4, buttons: { trigger: 0 } }); await settle();
+  L = await since(n); n += L.length;
+  check(L.includes('JET right') && L.some(l => l.startsWith('JETSTOP right')), 'controllers: trigger pours, letting go stops', L.join(' / '));
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));

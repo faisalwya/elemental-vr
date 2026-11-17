@@ -20,8 +20,8 @@ A standing-play VR game for Meta Quest, built for the web (WebXR, three.js). No 
 1. **Core moves with fire** (now). One mechanic at a time, each in a bare lab until it feels right:
    1. Throwing (v05: hold-and-release vs flick, aim help off)
    2. Taking fire (v06: reach in, plus grab-and-yank vs two-finger draw from a distance)
-   3. Charging a throw
-   4. Jet, only if it still earns its place
+   3. Jet (v07: palm forward pours the held flame; Faisal's idea, tested before charging)
+   4. Charging a throw
 2. **Water** as the second element, to check the moves carry over.
 3. **Combining elements** (steam and beyond).
 4. **Art direction pass.** Before then, only small art tests that do not touch the mechanics.
@@ -39,6 +39,7 @@ Every version stays playable at `/vNN/`. The newest is the one being worked on; 
 | [v04](https://faisalwya.github.io/elemental-vr/v04/) | Lock-on pull, swing throw, tuning board, practice discs. | Not enjoyable; changes not noticeable. See NOTES.md. |
 | [v05](https://faisalwya.github.io/elemental-vr/v05/) | Throwing lab. Flame appears in hand; style A hold and release vs B flick, wrist button to switch, aim help off. | B felt natural and fun; A more controlled but repetitive. Two tracking bugs fixed. |
 | [v06](https://faisalwya.github.io/elemental-vr/v06/) | Pulling lab. Reach into near bowls, or pull from 2.5 to 7 m: A grab and yank vs B two-finger draw. Throw is v05's flick. | A, grab and yank, clearly won. |
+| [v07](https://faisalwya.github.io/elemental-vr/v07/) | Flamethrower lab. Holding a flame: arm out, palm forward pours it as a jet (about 3 s). Straw dummies and crates burn. Grab and yank with tighter aiming. | Waiting for playtest. |
 
 ## Repo
 
@@ -55,8 +56,8 @@ No build step: plain ES modules, served as they are by GitHub Pages from `main`.
 
 ## Testing
 
-- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05), `node tests/pull.test.mjs` (v06): game logic, no browser.
-- `python3 tests/page_check.py v06 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
-- `node tests/xr_check.mjs v06` (or v05): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
+- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05), `node tests/pull.test.mjs` (v06), `node tests/jet.test.mjs` (v07): game logic, no browser.
+- `python3 tests/page_check.py v07 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
+- `node tests/xr_check.mjs v07` (or v05, v06): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
 - Immersive Web Emulator (Chrome extension) to try a version on the laptop without the headset. Its AI agent bridge lets a local coding agent drive the emulated headset.
 - The headset is the only judge of feel.
