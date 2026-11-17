@@ -2,6 +2,21 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-17 · v06, the pulling lab
+
+**Played.** No flame appears on its own. Reach into a near bowl, or pull from fires at 2.5, 4.5 and 7 m. Style A, grab and yank (open hand toward the fire until it glows, close to grab, yank the fist back) vs style B, two-finger draw (point index and middle at the fire, draw the hand back). Throw is v05's flick.
+
+**Faisal:** "A is definitely the winner."
+
+**Decisions.**
+- Pull = A, grab and yank. B (two-finger draw) is cut.
+- Throw = v05's flick, kept.
+- So the core loop so far: reach, grab, yank, flick.
+
+**Still open (not yet answered).**
+- Was it clear which fire you were aiming at before grabbing?
+- Is reaching into a near bowl still worth having next to the pull?
+
 ## 2026-11-17 · v05, the throwing lab
 
 **Played.** Flame appears in each hand. Style A, hold and release (close, swing, open) vs style B, flick (open hand, leaves at the fastest point of the swing). Wrist button to switch. Aim help off. Targets at 3, 6, 9 m and a crate wall.
