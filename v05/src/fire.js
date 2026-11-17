@@ -74,6 +74,7 @@ export function stepHand(h, inp, dt, t, style, emit) {
     h.hist.length = 0; h.vels.length = 0; h.vel = { x: 0, y: 0, z: 0 }; h.swing = null;
     return;
   }
+  if (h.mode !== inp.mode) { h.hist.length = 0; h.vels.length = 0; h.swing = null; }   // hands to controllers: the jump between them is not a swing
   h.mode = inp.mode;
   h.flamePos = copy(inp.flamePos || inp.palm);
   h.hist.push({ t, p: copy(inp.palm) });

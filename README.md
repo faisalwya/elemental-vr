@@ -56,5 +56,6 @@ No build step: plain ES modules, served as they are by GitHub Pages from `main`.
 
 - `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05): game logic, no browser.
 - `python3 tests/page_check.py v05 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
+- `node tests/xr_check.mjs v05`: enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays both throwing styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
 - Immersive Web Emulator (Chrome extension) to try a version on the laptop without the headset. Its AI agent bridge lets a local coding agent drive the emulated headset.
 - The headset is the only judge of feel.

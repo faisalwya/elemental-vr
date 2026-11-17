@@ -121,4 +121,11 @@ function rig(style, mode = 'hand') {
   assert.equal(stepButton(b, null, C, 0.016), false);
   ok('wrist button: presses again after the finger leaves');
 }
+{
+  const r = rig('B');
+  r.hold(READY, OPEN, 0.9);
+  r.frame(P(0.3, 1.5, -0.6), OPEN, { mode: 'controller' }); r.hold(P(0.3, 1.5, -0.6), OPEN, 0.3, { mode: 'controller' });
+  assert.equal(r.throws().length, 0);
+  ok('switching from hands to controllers is not a flick, even though the position jumps');
+}
 console.log(`\n${n} checks passed`);
