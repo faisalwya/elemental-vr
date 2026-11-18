@@ -756,7 +756,36 @@ async function scenarioV12() {
   await propsCheck();
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11, v12: scenarioV12 })[VER]();
+
+async function scenarioV13() {
+  await scenarioV12();
+  await page.evaluate(() => { window.__game.FT.aimMode = 'arm'; window.__xr.primaryInputMode = 'hand'; window.__game.travel(0); window.__xr.position.x = 0; window.__xr.position.z = 0; }); await wait(1.2);
+  const st = await page.evaluate(() => window.__game.station());
+  check(st === 0, 'back at the pull lab', String(st));
+  const empty = side => page.evaluate(s => { const h = window.__game.hands[s]; h.state = 'empty'; h.fuel = 0; h.timer = 0; h.target = null; }, side);
+  // the post's aim button
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.4, pose: 'point' }); await settle(); await wait(0.3);
+  const Rp = await read('right'), rh = await handPos('right');
+  const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
+  const post = Object.fromEntries((await page.evaluate(() => window.__game.post())).map(b => [b.k, b]));
+  const press = async c => { await K('right', { to: to(c, [0.05, 0.12, 0.05]), dur: 0.5 }); await K('right', { to: to(c, [0, 0.01, 0]), dur: 0.3 }); await K('right', { dur: 0.15 }); await K('right', { to: to(c, [0.05, 0.14, 0.06]), dur: 0.3 }); await settle(); };
+  const a0 = await page.evaluate(() => window.__game.aim()); await press(post.aim); const a1 = await page.evaluate(() => window.__game.aim()); await press(post.aim); const a2 = await page.evaluate(() => window.__game.aim());
+  check(a0 === 'arm' && a1 === 'ray' && a2 === 'arm', 'the post\'s aim button switches arm line and headset ray', `${a0} -> ${a1} -> ${a2}`);
+  // warmer / colder with the arm line: aim 18 degrees off the 5.5 m fire, then straight at it
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.4, pose: 'open' }); await settle(); await empty('right');
+  const F = await page.evaluate(() => { const b = window.__game.world.bowls.find(b => !b.near && Math.abs(b.d - 5.5) < 0.1); return { id: b.id, pos: [b.pos.x, b.pos.y, b.pos.z] }; });
+  const sh = [0.17, 1.4, 0.05], dirTo = p => { const v = [p[0] - sh[0], p[1] - sh[1], p[2] - sh[2]], l = Math.hypot(...v); return v.map(x => x / l); };
+  const rotY = (v, deg) => { const a = deg * Math.PI / 180; return [v[0] * Math.cos(a) + v[2] * Math.sin(a), v[1], -v[0] * Math.sin(a) + v[2] * Math.cos(a)]; };
+  const palmAt = async d => { const r = await read('right'), hp = await handPos('right'), o = [r.palm[0] - hp[0], r.palm[1] - hp[1], r.palm[2] - hp[2]]; await K('right', { to: [sh[0] + d[0] * 0.5 - o[0], sh[1] + d[1] * 0.5 - o[1], sh[2] + d[2] * 0.5 - o[2]], dur: 0.6 }); await settle(); await wait(0.4); };
+  const state = () => page.evaluate(id => { const h = window.__game.hands.right, w = (h.warm || []).find(w => w.id === id); return { target: h.target && h.target.id, warm: w ? w.k : 0, aiming: h.aiming }; }, F.id);
+  await palmAt(rotY(dirTo(F.pos), 18)); const off18 = await state();
+  await palmAt(dirTo(F.pos)); const on = await state();
+  check(off18.aiming && off18.warm > 0 && off18.target !== F.id, 'aiming 18 degrees off a fire: it is warm (stirs) but not selected', JSON.stringify(off18));
+  check(on.target === F.id && on.warm > off18.warm, 'aiming at it: it is selected, and warmer than before', JSON.stringify(on));
+  await look(0, -5); await wait(0.2); await shot('v13-01-pull-lab');
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11, v12: scenarioV12, v13: scenarioV13 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));

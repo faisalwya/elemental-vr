@@ -2,6 +2,19 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-18 · v12, the yank
+
+**Played.** Aim B (headset ray) only, yank A/B, fire-based selection feedback with the beam behind a debug button, floor pads.
+
+**Faisal:**
+- Lock-on felt worse than v09 and v10. With debug on (beams visible) it works great; with it off he could barely lock on, in both yank modes.
+- Could not really judge the yank because of the lock-on.
+- The pads worked fine. The space needs reorganising to be more useful for testing mechanics.
+
+**Claude's read.** v12 switched to the headset ray because B was slightly better in v11, but that was judged with the beam on. With a beam any aim works; without it, the ray does not point where your arm feels it points, while the arm line does (v06 to v10). And the new fire feedback only showed once something was already selected, so there was nothing to steer by.
+
+**Decided (v13).** Arm line as the default aim, with a post button to try the ray. A 12 degree zone (as v06 to v09). Warmer / colder: fires near your aim stir and brighten before they are selected. Stations organised by what they test: pull lab (a fan of 7 fires: near, far, left, right, high, low, and a close pair 8 degrees apart), throw range, pour yard, playground. Yank A/B kept for once lock-on works.
+
 ## 2026-11-18 · v11, lock-on
 
 **Played.** Aim A (shoulder-to-hand line) vs aim B (the Quest's pointing ray), aim beam, sticky selection, pull speed above the hand, wrist device with tap to wake.

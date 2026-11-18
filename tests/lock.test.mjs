@@ -2,6 +2,7 @@
 // v11 lock-on: sticky selection, and aim A (arm line) vs aim B (the headset's pointing ray).
 import assert from 'node:assert/strict';
 import { createHand, stepHand, FT, pickSticky } from '../v11/src/fire.js';
+import * as V13 from '../v13/src/fire.js';
 
 let n = 0; const ok = s => console.log(`ok ${++n} ${s}`);
 const P = (x, y, z) => ({ x, y, z });
@@ -55,5 +56,19 @@ const FIRES = [F1, F2];
   for (let i = 1; i <= 30; i++) step(P(OUT.x, OUT.y + (BACK.y - OUT.y) * i / 30, OUT.z + (BACK.z - OUT.z) * i / 30), 0.05);   // a slow pull: 0.85 m/s
   assert.equal(h.state, 'locked'); assert.ok(h.peakPull > 0.5 && h.peakPull < FT.pullSpeed, h.peakPull);
   ok('while grabbed, the pull speed and the best so far are measured (a slow 0.85 m/s pull does not fetch)');
+}
+{
+  // v13: back to the arm line by default, a 12 degree zone, and warmer / colder
+  assert.equal(V13.FT.aimMode, 'arm'); assert.equal(V13.FT.aimCone, 12);
+  ok('v13: aims along the arm line by default, with a 12 degree zone');
+  const near = (deg, d) => ({ id: deg, pos: at(deg, d), r: 0.25 + d * 0.03, near: false });
+  const A = near(52, 5), B = near(60, 5);
+  assert.equal(V13.pickSticky(EYE, yawDir(51), [A, B], 12, null).id, 52);
+  assert.equal(V13.pickSticky(EYE, yawDir(61), [A, B], 12, null).id, 60);
+  assert.equal(V13.pickSticky(EYE, yawDir(61), [A, B], 12, A).id, 60);
+  ok('v13: the close pair (8 degrees apart) can each be picked, and you can move from one to the other');
+  const w = d => (V13.warmth(EYE, yawDir(d), [near(0, 5.5)])[0] || { k: 0 }).k;
+  assert.ok(w(0) > w(10) && w(10) > w(20) && w(20) > 0 && w(40) === 0, [w(0), w(10), w(20), w(40)].join(','));
+  ok('v13: warmth rises as your aim nears a fire and is zero well away from it');
 }
 console.log(`\n${n} checks passed`);
