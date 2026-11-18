@@ -11,7 +11,7 @@ A standing-play VR game for Meta Quest, built for the web (WebXR, three.js). No 
 1. **Mechanics and physics.** What your hands do with each element (take, throw, and later more), and how the world reacts: burning, spreading, toppling, melting, mixing.
 2. **Look and feel.** The art style, plus everything that makes an action feel good: release bursts, trails, glow, sound, vibration. "Invisible fireballs" and "choppy pick-up" were problems in this pillar.
 
-**Constraint on everything:** comfort and performance. Smooth frame rate on the Quest (72 Hz or better), standing play, no artificial movement, nothing that causes motion sickness.
+**Constraint on everything:** comfort and performance. Smooth frame rate on the Quest (72 Hz or better), room-scale play (walking around a living-room-sized space; Faisal plays this way), no smooth artificial movement (travel is a quick fade and snap), nothing that causes motion sickness.
 
 **Parked for later:** goals and progression (why you play), and the wider world beyond one yard.
 

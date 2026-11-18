@@ -8,7 +8,11 @@ Newest first. What was played, what Faisal felt, what we decided.
 - Jet: acceptable for now; will need more fine tuning later.
 - The courtyard could be organised better. Thinking out loud: movement between rooms (a button or a teleport pad) so not everything is crammed into one place.
 
-**Open.** Separate rooms vs stations in one bigger courtyard, and how you travel between them (comfort rule: no smooth artificial movement; a quick fade and snap is fine).
+- Faisal has been walking around his living room while testing every version, not standing in one spot.
+
+**Decided.** v10: one bigger courtyard with stations, travel by a device on the left wrist (back / next, with a small map), quick fade and snap. Beacons saved for goals later. Design for walking around a living-room-sized space, not standing still.
+
+**Was open.** Separate rooms vs stations in one bigger courtyard, and how you travel between them (comfort rule: no smooth artificial movement; a quick fade and snap is fine).
 
 ## 2026-11-18 · v08, the courtyard
 
