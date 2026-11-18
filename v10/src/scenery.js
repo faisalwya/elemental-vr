@@ -132,12 +132,13 @@ export function createScenery(scene, particles) {
       S.torches.push({ flame, glow: glw, pos: tp, seed: rnd(10) });
     }
     // banners between the pillars on the back wall, moving in the wind
-    const bannerMat = swayMaterial(0x9c2a2a, { side: THREE.DoubleSide, cloth: true });
+    // the circle is painted onto the cloth, so it moves with it (v10 first build: a separate disc that the rippling cloth hid and showed)
+    const bannerTex = canvasTex(128, 256, (g, w, h) => { g.fillStyle = '#9c2a2a'; g.fillRect(0, 0, w, h); g.fillStyle = '#ffb04a'; g.beginPath(); g.arc(w / 2, h * 0.42, w * 0.23, 0, Math.PI * 2); g.fill(); g.fillStyle = '#7a1e1e'; g.fillRect(0, h - 14, w, 14); });
+    const bannerMat = swayMaterial(0xffffff, { side: THREE.DoubleSide, cloth: true, map: bannerTex });
     const bannerGeo = new THREE.PlaneGeometry(1.0, 1.9, 4, 10).translate(0, -0.95, 0);
     for (const x of [-5.5, 0, 5.5]) {
-      const b = new THREE.Mesh(bannerGeo, bannerMat); b.position.set(x, H - 0.1, YARD.z0 + 0.04); scene.add(b);
-      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6).rotateZ(Math.PI / 2), woodMat); pole.position.set(x, H - 0.08, YARD.z0 + 0.06); scene.add(pole);
-      const sigil = new THREE.Mesh(new THREE.CircleGeometry(0.22, 20), new THREE.MeshBasicMaterial({ color: 0xffb04a })); sigil.position.set(x, H - 0.8, YARD.z0 + 0.05); scene.add(sigil);
+      const b = new THREE.Mesh(bannerGeo, bannerMat); b.position.set(x, H - 0.1, YARD.z0 + 0.12); scene.add(b);   // far enough off the wall that the ripple never dips into it
+      const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.2, 6).rotateZ(Math.PI / 2), woodMat); pole.position.set(x, H - 0.08, YARD.z0 + 0.12); scene.add(pole);
     }
   }
 

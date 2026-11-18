@@ -13,6 +13,8 @@ Newest first. What was played, what Faisal felt, what we decided.
 **Causes (Claude) and fixes, same day, in v10.**
 - Spotlight: the sky dome is 90 m out and the camera drew nothing beyond 90 m. At the practice range (the dome's centre) it fit; at the other stations, up to 15 m off centre, the part of the dome you looked toward was cut away, leaving a round patch of plain background that followed your gaze. Now the sky, stars and moon move with you and the draw limit is 300 m.
 - Device: out of view, the Quest can keep reporting a hand at a guessed spot, and the device followed it. Now it only shows when you look at your wrist like a watch (back of the hand toward your eyes, gaze within about 37 degrees, held 0.15 s), and its buttons only work while it shows.
+- Faisal then asked for the device to stay hidden until needed (the Quest's own left-hand pinch menu is a system gesture, not ours to use). Chosen: tap to wake. A small glowing dot marks the back of the left wrist; tap it with the right index finger (within 4 cm) and the device appears for 4 seconds, longer while you use it, and hides when you travel.
+- The circles on the banners faded in and out: they were separate discs, and the rippling cloth moved in front of and behind them. Now painted onto the cloth, and the banners hang far enough off the wall that the ripple never dips into it.
 - Found by the emulator check after that change: because you now look down at your wrist to press, you arrived turned about 26 degrees. Arrival now uses where your body faces (your heading smoothed over a second, held while you look at the device).
 
 ## 2026-11-18 · v09, jet refined

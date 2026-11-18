@@ -389,7 +389,7 @@ function arrive(s) {
   const c = Math.cos(-D), sn = Math.sin(-D), ox = S.O[0] * c + S.O[1] * sn, oz = -S.O[0] * sn + S.O[1] * c;
   const T = new XRRigidTransform({ x: p.x - ox, y: 0, z: p.z - oz }, { x: 0, y: Math.sin(-D / 2), z: 0, w: Math.cos(-D / 2) });
   renderer.xr.setReferenceSpace(baseRef.getOffsetReferenceSpace(T));
-  station = s; device.key = '';
+  station = s; device.key = ''; devOpen = 0;
   for (const side of ['left', 'right']) { const h = hands[side]; h.hist.length = 0; h.swing = null; h.calmP = null; if (h.state === 'locked') { h.state = 'empty'; h.src = null; h.target = null; } }
   if (window.__log) window.__log.push('STATION ' + s + ' ' + S.name);
 }
@@ -405,7 +405,11 @@ function stepTravel(dt) {
 /* ---------- loop ---------- */
 let last = 0, simT = 0;
 const devCenters = {};
-let devShow = 0, bodyYaw = null;
+let bodyYaw = null, devOpen = 0, lostT = 0;
+const DEV_OPEN = 4;   // seconds the device stays up after a tap
+const WAKE = { on: 0.04, off: 0.07 };   // the wrist is a bigger target than a button: within 4 cm wakes it, 7 cm away before it can wake again
+const wakeBtn = createButton(), devWake = {};
+const wakeDot = makeGlow(COL.hot, 0.03, 0.5); wakeDot.visible = false; scene.add(wakeDot);
 // where your body faces in the room: your head's heading, smoothed over about a second, and held still while you look at the device
 function trackBody(dt, frozen) {
   const frame = renderer.xr.getFrame(), vp = baseRef && frame && frame.getViewerPose(baseRef);
@@ -435,28 +439,33 @@ renderer.setAnimationLoop(ms => {
 
   // the wrist device rides on the back of your left wrist; your right index finger presses its buttons
   {
-    // shown only when you look at your wrist like a watch: back of the hand toward your eyes, your gaze on it, held a moment.
-    // (Out of view, the Quest can keep reporting a hand at a guessed spot; this keeps the device from popping up there.)
-    const L = inputs.left, Rt = inputs.right;
-    let watching = false;
-    if (inVR && L && L.tracked && L.btn) {
-      const toWrist = tmpA.set(L.btn.x - headPos.x, L.btn.y - headPos.y, L.btn.z - headPos.z), d = toWrist.length(); toWrist.normalize();
-      const looked = gazeV.dot(toWrist) > 0.8, near = d > 0.15 && d < 0.75;
-      const backToEyes = L.mode === 'controller' ? true : -(L.normal.x * toWrist.x + L.normal.y * toWrist.y + L.normal.z * toWrist.z) < -0.45;
-      watching = looked && near && backToEyes;
+    // hidden until you tap the back of your left wrist with your right index finger (a small glowing dot marks the spot);
+    // it then stays up for a few seconds, longer while you use it, and hides when you travel
+    const L = inputs.left, Rt = inputs.right, tip = Rt && Rt.tracked ? Rt.tip : null;
+    const wrist = inVR && L && L.tracked && L.btn ? L.btn : null;
+    if (wrist) { lostT = 0; devWake.x = wrist.x; devWake.y = wrist.y; devWake.z = wrist.z; } else lostT += dt;
+    if (lostT > 0.3) devOpen = 0;   // the left hand left view: close
+    if (devOpen > 0) devOpen = Math.max(0, devOpen - dt);
+    else if (wrist && tip) {
+      const d = Math.hypot(tip.x - wrist.x, tip.y - wrist.y, tip.z - wrist.z);
+      if (!wakeBtn.down && d < WAKE.on) { wakeBtn.down = true; devOpen = DEV_OPEN; devBtns.back.cool = devBtns.next.cool = 0.35; audio.tick(); buzz('left', 0.3, 30); }
+      else if (d > WAKE.off) wakeBtn.down = false;
     }
-    devShow = watching ? Math.min(1, devShow + dt / 0.15) : 0;
-    if (inVR) trackBody(dt, watching || fade.t >= 0);
-    const at = devShow >= 1 && L.btn;
+    if (devOpen > 0) wakeBtn.down = true;   // the tap that woke it does not count again until the finger moves away
+    let looking = false;
+    if (wrist) { const toWrist = tmpA.set(wrist.x - headPos.x, wrist.y - headPos.y, wrist.z - headPos.z).normalize(); looking = gazeV.dot(toWrist) > 0.8; }
+    if (inVR) trackBody(dt, looking || devOpen > 0 || fade.t >= 0);   // your heading holds while you look at your wrist
+    wakeDot.visible = !!wrist && devOpen <= 0;
+    if (wakeDot.visible) { wakeDot.position.set(wrist.x, wrist.y, wrist.z); wakeDot.material.opacity = 0.45 + Math.sin(t * 3) * 0.15; }
+    const at = devOpen > 0 && wrist;
     device.mesh.visible = !!at;
     if (!at) { devBtns.back.down = devBtns.next.down = false; for (const k in devCenters) delete devCenters[k]; }
     if (at) {
       device.mesh.position.set(at.x, at.y, at.z); device.mesh.lookAt(headPos); device.mesh.updateMatrixWorld(true);
-      const tip = Rt && Rt.tracked ? Rt.tip : null;
       for (const [k, x, dir] of [['back', -BTN_X, -1], ['next', BTN_X, 1]]) {
         const c = device.mesh.localToWorld(tmpB.set(x, 0.003, 0));
         devCenters[k] = { x: c.x, y: c.y, z: c.z };
-        if (stepButton(devBtns[k], tip, devCenters[k], dt)) { devFlash[k] = 1; buzz('left', 0.5, 40); travel(station + dir); }
+        if (stepButton(devBtns[k], tip, devCenters[k], dt)) { devFlash[k] = 1; buzz('left', 0.5, 40); travel(station + dir); devOpen = 0; }
         devFlash[k] = Math.max(0, devFlash[k] - dt * 3);
       }
       drawDevice();
@@ -487,4 +496,4 @@ renderer.setAnimationLoop(ms => {
 });
 
 // handle for the automated page check
-window.__game = { world, hands, stats, scenery, renderer, demo: () => demo, station: () => station, travel, device: () => devCenters, head: () => ({ x: headPos.x, y: headPos.y, z: headPos.z }) };
+window.__game = { world, hands, stats, scenery, renderer, demo: () => demo, station: () => station, travel, device: () => devCenters, wake: () => devWake, open: () => devOpen, head: () => ({ x: headPos.x, y: headPos.y, z: headPos.z }) };

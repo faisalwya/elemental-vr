@@ -574,12 +574,18 @@ async function scenarioV10() {
   check((await station()) === 0, 'starts at the practice range', String(await station()));
   // the wrist device: shown on the back of the left wrist; poke "next" with the right index finger
   await K('left', { to: [-0.15, 1.25, -0.3], dur: 0.4 }); await K('right', { dur: 0.3, pose: 'point' }); await settle(); await wait(0.3);
-  const hidden = await page.evaluate(() => Object.keys(window.__game.device()).length === 0);
-  check(hidden, 'the wrist device stays hidden while you look ahead, not at your wrist');
-  await look(26, -46); await wait(0.4);   // raise your eyes to the wrist, like checking a watch
-  const dev = await page.evaluate(() => window.__game.device());
+  const hidden = () => page.evaluate(() => Object.keys(window.__game.device()).length === 0);
+  await look(26, -46); await wait(0.6);   // look at the wrist: still hidden until you tap it
+  check(await hidden(), 'the wrist device stays hidden, even while you look at your wrist, until you tap it');
   const Rp = await read('right'), rh = await handPos('right');
   const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
+  const wake = await page.evaluate(() => window.__game.wake());
+  await K('right', { to: to(wake, [0.05, 0.08, 0.06]), dur: 0.5 }); await K('right', { to: to(wake, [0, 0.01, 0]), dur: 0.25 }); await K('right', { to: to(wake, [0.04, 0.09, 0.06]), dur: 0.25 }); await settle(); await wait(0.1);
+  check(!(await hidden()), 'tapping the back of the left wrist brings the device up');
+  await wait(4.5);
+  check(await hidden() && (await station()) === 0, 'left alone it hides after about 4 seconds, without travelling');
+  await K('right', { to: to(wake, [0.05, 0.08, 0.06]), dur: 0.3 }); await K('right', { to: to(wake, [0, 0.01, 0]), dur: 0.25 }); await K('right', { to: to(wake, [0.04, 0.09, 0.06]), dur: 0.25 }); await settle(); await wait(0.1);
+  const dev = await page.evaluate(() => window.__game.device());
   check(!!dev.next && !!dev.back, 'the wrist device is showing, with back and next buttons', JSON.stringify(dev));
   info('device buttons', `back ${['x', 'y', 'z'].map(k => dev.back[k].toFixed(3))}, next ${['x', 'y', 'z'].map(k => dev.next[k].toFixed(3))}, ${(Math.hypot(dev.next.x - dev.back.x, dev.next.y - dev.back.y, dev.next.z - dev.back.z) * 100).toFixed(1)} cm apart`);
   await shot('v10-01-device');
@@ -589,6 +595,7 @@ async function scenarioV10() {
   await look(0, 0); await wait(0.2);
   L = await since(n); n += L.length;
   check((await station()) === 1 && L.filter(l => l.startsWith('STATION')).length === 1, 'poking "next" once travels once, to the burn yard', `${L.join(' / ')}; station ${await station()}`);
+  check(await hidden(), 'after travelling the device hides again');
   const head = await page.evaluate(() => window.__game.head()), S1 = await page.evaluate(() => window.__game.world.stations[1]);
   check(Math.hypot(head.x - S1.O[0], head.z - S1.O[1]) < 0.4, 'you arrive standing on the burn yard station', `head at ${head.x.toFixed(2)}, ${head.z.toFixed(2)}; station at ${S1.O}`);
   const fwd = await page.evaluate(() => { const v = new (window.__game.renderer.xr.getCamera().position.constructor)(); window.__game.renderer.xr.getCamera().getWorldDirection(v); return [v.x, v.z]; });
