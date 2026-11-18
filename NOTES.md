@@ -2,6 +2,23 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-18 · v11, lock-on
+
+**Played.** Aim A (shoulder-to-hand line) vs aim B (the Quest's pointing ray), aim beam, sticky selection, pull speed above the hand, wrist device with tap to wake.
+
+**Faisal:**
+- Felt no difference between A and B; if anything B was slightly better. The right fire was selected more often than not.
+- The yank was not seamless: he sometimes had to jerk it a few times.
+- The wrist device still appeared in front of his face when his hands were out of view (at first, and once or twice later). Touching and pressing it was not seamless: it moved and faded as the other hand overlapped, and the button was hard to press. Suggested moving away from a wrist device.
+- Does not want a visible beam in the final game: lock-on should be refined in both mechanics and look and feel.
+
+**Claude's read.**
+- No A/B difference is expected in hindsight: Meta's hand ray is itself built from an estimated shoulder through the hand.
+- Repeated yanks: most likely the grab and the yank happen in one motion, and the yank only counted once the hand registered as closed; also only pulls toward the shoulder counted, at over 1 m/s.
+- The wrist device fights the hardware: one hand touching or covering the other is the worst case for Quest hand tracking.
+
+**Decided (v12).** Aim B only. Yank A (quick tug, 0.6 m/s) vs B (pull back 15 cm at any speed); a pull that starts while the hand is closing counts; any pull toward the chest or hip counts. The fire shows selection itself (leans toward you, embers to your hand, a catch burst, a tether of sparks while you hold); the beam and numbers only behind a debug button. Floor pads (stand for a second) replace the wrist device. A post at the practice range holds the yank A/B and debug buttons.
+
 ## 2026-11-18 · Next focus: the hand, the pull
 
 **Faisal:**

@@ -673,7 +673,90 @@ async function scenarioV11() {
   await page.evaluate(() => { window.__xr.hands.right.quaternion.set(0, 0, 0, 1); window.__game.setAim('arm'); });
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11 })[VER]();
+
+async function scenarioV12() {
+  // the earlier hand and jet checks aim along the arm line; v12 aims with the headset ray, so run them with the arm line
+  await page.evaluate(() => { window.__game.FT.aimMode = 'arm'; });
+  await scenarioV07();
+  await page.evaluate(() => { window.__game.FT.aimMode = 'ray'; window.__xr.primaryInputMode = 'hand'; window.__game.travel(0); }); await wait(1);
+  const st = () => page.evaluate(() => window.__game.station());
+  const empty = side => page.evaluate(s => { const h = window.__game.hands[s]; h.state = 'empty'; h.fuel = 0; h.timer = 0; }, side);
+  await K('left', { to: [-0.25, 1.2, -0.3], dur: 0.5, pose: 'open' }); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5, pose: 'point' }); await settle(); await wait(0.5);
+  check((await st()) === 0, 'back at the practice range', String(await st()));
+  // the post: poke "yank" with the right index finger, then "debug" on and off
+  const Rp = await read('right'), rh = await handPos('right');
+  const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
+  const press = async c => { await K('right', { to: to(c, [0.05, 0.12, 0.05]), dur: 0.5 }); await K('right', { to: to(c, [0, 0.01, 0]), dur: 0.3 }); await K('right', { dur: 0.15 }); await K('right', { to: to(c, [0.05, 0.14, 0.06]), dur: 0.3 }); await settle(); };
+  const post = Object.fromEntries((await page.evaluate(() => window.__game.post())).map(b => [b.k, b]));
+  const y0 = await page.evaluate(() => window.__game.yank());
+  await press(post.yank);
+  const y1 = await page.evaluate(() => window.__game.yank());
+  check(y0 === 'quick' && y1 === 'pull', 'the post\'s yank button switches A (quick) to B (pull back)', `${y0} -> ${y1}`);
+  await press(post.debug); const d1 = await page.evaluate(() => window.__game.debug());
+  await press(post.debug); const d2 = await page.evaluate(() => window.__game.debug());
+  check(d1 === true && d2 === false, 'the debug button turns the beam and numbers on and off', `${d1}, ${d2}`);
+  await look(40, -25); await wait(0.3); await shot('v12-01-post'); await look(0, 0);
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5, pose: 'open' }); await settle();
+  // a slow draw back with the headset ray: B (pull back) fetches, A (quick) does not
+  const fb = await page.evaluate(() => { const b = window.__game.world.bowls.find(b => !b.near && Math.abs(b.d - 4.5) < 0.1); return { id: b.id }; });
+  const aimAt = async () => {
+    for (const yawDeg of [-70, -60, -50, -40]) { const y = yawDeg * Math.PI / 180; await page.evaluate(q => window.__xr.hands.right.quaternion.set(...q), [0, Math.sin(y / 2), 0, Math.cos(y / 2)]); await wait(0.25);
+      if (await page.evaluate(id => { const h = window.__game.hands.right; return !!(h.target && h.target.id === id); }, fb.id)) return yawDeg; }
+    return null;
+  };
+  const slowDraw = async mode => {
+    await page.evaluate(m => window.__game.setYank(m), mode); await empty('right');
+    await K('right', { to: [0.3, 1.35, -0.45], dur: 0.5, pose: 'open' }); await settle(); await wait(0.3);
+    const yaw = await aimAt();
+    if (yaw === null) return { yaw, L: ['never selected'] };
+    if (mode === 'pull') { await look(-45, -5); await wait(0.15); await shot('v12-02-selected'); await look(0, 0); }
+    const n0 = (await log()).length;
+    await K('right', { pose: 'fist', dur: 0.3 }); await settle(); await wait(0.2);
+    await K('right', { to: [0.27, 1.3, -0.22], dur: 0.6, linear: true }); await settle(); await wait(0.8);   // 23 cm back over 0.6 s: about 0.4 m/s
+    await K('right', { pose: 'open', dur: 0.3 }); await settle(); await wait(0.3);
+    await page.evaluate(() => window.__xr.hands.right.quaternion.set(0, 0, 0, 1));
+    return { yaw, L: await since(n0) };
+  };
+  const B = await slowDraw('pull');
+  check(B.L.some(l => l.startsWith('LOCK right yank pull')) && B.L.some(l => l.startsWith('PULL right pull')), 'yank B: a slow 23 cm draw back fetches the selected fire (aimed with the headset ray)', B.L.join(' / '));
+  const A = await slowDraw('quick');
+  check(A.L.some(l => l.startsWith('LOCK right yank quick')) && !A.L.some(l => l.startsWith('PULL')), 'yank A: the same slow draw does not fetch (A needs a quick tug)', A.L.join(' / '));
+  // grab and yank in one motion with A
+  await empty('right'); await K('right', { to: [0.3, 1.35, -0.45], dur: 0.5, pose: 'open' }); await settle(); await wait(0.3);
+  if ((await aimAt()) !== null) {
+    const n0 = (await log()).length;
+    await K('right', { pose: 'fist', to: [0.27, 1.28, -0.2], dur: 0.15, linear: true }); await settle(); await wait(0.8);
+    const L = await since(n0);
+    check(L.some(l => l.startsWith('PULL right quick')), 'yank A: grabbing and yanking in one motion fetches it first time', L.join(' / '));
+    await K('right', { pose: 'open', dur: 0.2 }); await settle(); await page.evaluate(() => window.__xr.hands.right.quaternion.set(0, 0, 0, 1));
+  }
+  // travel: stand on the "next" pad behind you to the right for a second
+  await empty('right'); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.4, pose: 'open' }); await settle();
+  const pads = await page.evaluate(() => window.__game.pads());
+  const next = pads.find(P => P.s === 0 && P.to === 1);
+  check(!!next, 'each station has a pad to the next station', JSON.stringify(pads.filter(P => P.s === 0)));
+  let n = (await log()).length;
+  await page.evaluate(([x, z]) => { window.__xr.position.x = x; window.__xr.position.z = z; }, [next.x, next.z]); await wait(0.5);
+  check((await st()) === 0, 'stepping onto a pad does not travel straight away (you stand for a second)', String(await st()));
+  await wait(1.2);
+  let L = await since(n); n += L.length;
+  check((await st()) === 1 && L.filter(l => l.startsWith('STATION')).length === 1, 'standing on it for a second travels once, to the burn yard', L.join(' / '));
+  const head = await page.evaluate(() => window.__game.head()), S1 = await page.evaluate(() => window.__game.world.stations[1]);
+  check(Math.hypot(head.x - S1.O[0], head.z - S1.O[1]) < 0.4, 'you arrive standing on the burn yard station', `head at ${head.x.toFixed(2)}, ${head.z.toFixed(2)}`);
+  await wait(1.5);
+  check((await st()) === 1, 'and stay there (you arrive in the middle, not on a pad)', String(await st()));
+  await shot('v12-03-burn-yard');
+  // controllers still travel with A and B
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'controller'; }); await wait(0.8);
+  await K('right', { dur: 0.1, buttons: { 'a-button': 1 } }); await K('right', { dur: 0.6, buttons: { 'a-button': 0 } }); await settle();
+  check((await st()) === 2, 'controllers: A goes on', String(await st()));
+  await K('right', { dur: 0.1, buttons: { 'b-button': 1 } }); await K('right', { dur: 0.6, buttons: { 'b-button': 0 } }); await settle();
+  check((await st()) === 1, 'controllers: B goes back', String(await st()));
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; }); await wait(0.5);
+  await propsCheck();
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11, v12: scenarioV12 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
