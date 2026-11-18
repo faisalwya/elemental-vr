@@ -2,6 +2,14 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-18 · v09, jet refined
+
+**Faisal:**
+- Jet: acceptable for now; will need more fine tuning later.
+- The courtyard could be organised better. Thinking out loud: movement between rooms (a button or a teleport pad) so not everything is crammed into one place.
+
+**Open.** Separate rooms vs stations in one bigger courtyard, and how you travel between them (comfort rule: no smooth artificial movement; a quick fade and snap is fine).
+
 ## 2026-11-18 · v08, the courtyard
 
 **Played.** Walled courtyard at dusk with torches, banners, trees, mountains, clouds, fireflies, bats, wind and crickets; new things to burn (hay, lanterns, bell rope, fuse and fireworks, ice, barrels, dry grass). Mechanics as v07.
