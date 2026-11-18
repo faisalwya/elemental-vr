@@ -700,7 +700,7 @@ async function scenarioV12() {
   // a slow draw back with the headset ray: B (pull back) fetches, A (quick) does not
   const fb = await page.evaluate(() => { const b = window.__game.world.bowls.find(b => !b.near && Math.abs(b.d - 4.5) < 0.1); return { id: b.id }; });
   const aimAt = async () => {
-    for (const yawDeg of [-70, -60, -50, -40]) { const y = yawDeg * Math.PI / 180; await page.evaluate(q => window.__xr.hands.right.quaternion.set(...q), [0, Math.sin(y / 2), 0, Math.cos(y / 2)]); await wait(0.25);
+    for (const yawDeg of [-70, -60, -50, -40, 20, 30, 40, 50]) { const y = yawDeg * Math.PI / 180; await page.evaluate(q => window.__xr.hands.right.quaternion.set(...q), [0, Math.sin(y / 2), 0, Math.cos(y / 2)]); await wait(0.25);
       if (await page.evaluate(id => { const h = window.__game.hands.right; return !!(h.target && h.target.id === id); }, fb.id)) return yawDeg; }
     return null;
   };
@@ -778,9 +778,9 @@ async function scenarioV13() {
   const rotY = (v, deg) => { const a = deg * Math.PI / 180; return [v[0] * Math.cos(a) + v[2] * Math.sin(a), v[1], -v[0] * Math.sin(a) + v[2] * Math.cos(a)]; };
   const palmAt = async d => { const r = await read('right'), hp = await handPos('right'), o = [r.palm[0] - hp[0], r.palm[1] - hp[1], r.palm[2] - hp[2]]; await K('right', { to: [sh[0] + d[0] * 0.5 - o[0], sh[1] + d[1] * 0.5 - o[1], sh[2] + d[2] * 0.5 - o[2]], dur: 0.6 }); await settle(); await wait(0.4); };
   const state = () => page.evaluate(id => { const h = window.__game.hands.right, w = (h.warm || []).find(w => w.id === id); return { target: h.target && h.target.id, warm: w ? w.k : 0, aiming: h.aiming }; }, F.id);
-  await palmAt(rotY(dirTo(F.pos), 18)); const off18 = await state();
+  await palmAt(rotY(dirTo(F.pos), 24)); const off18 = await state();
   await palmAt(dirTo(F.pos)); const on = await state();
-  check(off18.aiming && off18.warm > 0 && off18.target !== F.id, 'aiming 18 degrees off a fire: it is warm (stirs) but not selected', JSON.stringify(off18));
+  check(off18.aiming && off18.warm > 0 && off18.target !== F.id, 'aiming 24 degrees off a fire: it is warm (stirs) but not selected', JSON.stringify(off18));
   check(on.target === F.id && on.warm > off18.warm, 'aiming at it: it is selected, and warmer than before', JSON.stringify(on));
   await look(0, -5); await wait(0.2); await shot('v13-01-pull-lab');
 }

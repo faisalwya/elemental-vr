@@ -334,7 +334,8 @@ export const PT = {
   // pour yard (station 2): all within jet range
   hay: { at: at(2, -1.8, 3.2), face: STATIONS[2].O, burn: 7, regrow: 14, spread: 1.4 },
   grass: { x0: at(2, 0.4, 0)[0], z0: at(2, 0, 3.4)[1], cols: 6, rows: 5, cell: 0.4, burn: 2.8, regrow: 16, spread: 0.45 },   // local x 0.4..2.8, d 1.4..3.4
-  ice: { at: at(2, -1.1, 1.6), size: 0.75, ball: 0.2, jet: 0.02, refreeze: 25 },   // about a second of jet on it
+  ice: { at: at(2, -2.6, 1.2), size: 0.75,   // off to the left, clear of the line to the hay
+    ball: 0.2, jet: 0.02, refreeze: 25 },   // about a second of jet on it
   // playground (station 3)
   bell: { at: at(3, 2.6, 2.6), reset: 10 },
   fuse: [at(3, -0.6, 0.9), at(3, -1.2, 1.5), at(3, -1.4, 2.2), at(3, -1.2, 2.8)],
