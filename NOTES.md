@@ -7,7 +7,7 @@ Newest first. What was played, what Faisal felt, what we decided.
 **Played.** Walled courtyard at dusk with torches, banners, trees, mountains, clouds, fireflies, bats, wind and crickets; new things to burn (hay, lanterns, bell rope, fuse and fireworks, ice, barrels, dry grass). Mechanics as v07.
 
 **Faisal:**
-- The courtyard is better, but feels slightly busy.
+- The courtyard is better, but feels slightly busy. Clarified later: he meant the objects and items felt crowded, not the scenery. (v09 thinned the scenery instead; the crowding is still to fix.)
 - The clouds seem to move and change perspective as he looks around.
 - Jet needs a better balance between trigger and sensitivity: once a fireball was thrown when he meant to pour, and sometimes he stuck his hand out and it did not pour until he repeated the move.
 
