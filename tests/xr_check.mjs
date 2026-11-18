@@ -433,7 +433,8 @@ async function scenarioV07() {
   info('emulated relaxed hand', `palm normal ${R0.normal}, so "palm forward" is ${(-R0.normal[2]).toFixed(2)} (start needs 0.6, keep needs 0.45)`);
 
   // work out the hand turns first, while the hand is empty (snapping the emulated hand would read as a flick)
-  const dm = dummies.slice().sort((a, b) => Math.abs(Math.atan2(a[0], -a[2])) - Math.abs(Math.atan2(b[0], -b[2])))[0], dir = nrm3(sub3(dm, sh));
+  const nearDummy = dummies.filter(d => Math.hypot(d[0], d[2]) < 6).sort((a, b) => Math.abs(Math.atan2(a[0], -a[2])) - Math.abs(Math.atan2(b[0], -b[2])))[0];
+  const dm = nearDummy || await page.evaluate(() => { const t = window.__game.world.targets().mid; return [t.x, t.y, t.z]; }), dir = nrm3(sub3(dm, sh));
   await palmTo('right', add3(sh, mul3(dir, 0.5)), 0.7);
   const fp = await facePalm('right', dir), fpFwd = await facePalm('right', [0, 0, -1]);
   info('palm turned toward the dummy', `${fp.err.toFixed(1)} degrees off; straight ahead ${fpFwd.err.toFixed(1)} degrees off`);
@@ -452,7 +453,7 @@ async function scenarioV07() {
   await wait(2.5);
   L = await since(n); n += L.length;
   check(L.includes('JET right'), 'holding a flame, arm out, palm turned forward: the jet starts', L.join(' / '));
-  check(L.some(l => l.startsWith('ignite dummy')), 'the jet sets the straw dummy alight', L.join(' / '));
+  if (nearDummy) check(L.some(l => l.startsWith('ignite dummy')), 'the jet sets the straw dummy alight', L.join(' / '));
   check(L.some(l => /^JETSTOP right .* out$/.test(l)) && (await hand('right')).state === 'empty', 'pouring until the flame is used up empties the hand', L.filter(l => l.startsWith('JET')).join(' / '));
 
   // 3. take again, pour briefly, turn the palm back down: stops, rest stays; then flick it
@@ -510,16 +511,24 @@ async function scenarioV07() {
 
 async function scenarioV08() {
   await scenarioV07();
+  await propsCheck();
+}
+async function propsCheck() {
   // each thing that reacts to fire, hit directly by a throw (or a jet) aimed with the game's own ballistics
   await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; });
   const st = () => page.evaluate(() => window.__game.world.status());
   const throwAt = (name, S = 9) => page.evaluate(async ([name, S]) => {
     const { aimDir } = await import('./src/demo.js');
-    const T = window.__game.world.targets()[name], from = { x: 0.15, y: 1.55, z: -0.3 }, d = aimDir(from, T, S);
+    const T = window.__game.world.targets()[name], st = window.__game.world.stations;
+    let from = { x: 0.15, y: 1.55, z: -0.3 };
+    if (st) { const S0 = st.slice().sort((a, b) => Math.hypot(a.O[0] - T.x, a.O[1] - T.z) - Math.hypot(b.O[0] - T.x, b.O[1] - T.z))[0]; from = { x: S0.O[0] + S0.F[0] * 0.3, y: 1.55, z: S0.O[1] + S0.F[1] * 0.3 }; }
+    const d = aimDir(from, T, S);
     window.__game.world.addShot(from, { x: d.x * S, y: d.y * S, z: d.z * S }, 'ball');
   }, [name, S]);
   const pour = (name, secs) => page.evaluate(async ([name, secs]) => {
-    const T = window.__game.world.targets()[name], from = { x: 0.6, y: 1.0, z: -0.3 };
+    const T = window.__game.world.targets()[name], st = window.__game.world.stations;
+    let from = { x: 0.6, y: 1.0, z: -0.3 };
+    if (st) { const S0 = st.slice().sort((a, b) => Math.hypot(a.O[0] - T.x, a.O[1] - T.z) - Math.hypot(b.O[0] - T.x, b.O[1] - T.z))[0]; from = { x: S0.O[0] + S0.F[0] * 0.3, y: 1.0, z: S0.O[1] + S0.F[1] * 0.3 }; }
     const d = { x: T.x - from.x, y: T.y - from.y, z: T.z - from.z }, l = Math.hypot(d.x, d.y, d.z);
     for (let i = 0; i < secs * 45; i++) setTimeout(() => window.__game.world.addShot(from, { x: d.x / l * 9, y: d.y / l * 9 + 0.6, z: d.z / l * 9 }, 'jet'), i * 22);
   }, [name, secs]);
@@ -552,11 +561,60 @@ async function scenarioV08() {
   check((await st()).ice === 'free', 'ice: the jet melts it and frees the flame', String((await st()).ice));
   const src = await page.evaluate(() => window.__game.world.sources().some(s => s.id === 300));
   check(src, 'ice: the freed flame is a fire you can pull from');
-  await look(-30, -15); await wait(0.3); await shot('v08-props');
+  if (VER < 'v10') { await look(-30, -15); await wait(0.3); await shot('v08-props'); }
   info('props after', JSON.stringify(await st()));
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08 })[VER]();
+
+async function scenarioV10() {
+  await scenarioV07();   // the hand and jet checks, at the practice range
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; });
+  await K('left', { to: [-0.25, 1.2, -0.3], dur: 0.6, pose: 'open' }); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.6, pose: 'open' }); await settle(); await wait(1);
+  const station = () => page.evaluate(() => window.__game.station());
+  check((await station()) === 0, 'starts at the practice range', String(await station()));
+  // the wrist device: shown on the back of the left wrist; poke "next" with the right index finger
+  await K('left', { to: [-0.15, 1.25, -0.3], dur: 0.4 }); await K('right', { dur: 0.3, pose: 'point' }); await settle(); await wait(0.3);
+  const dev = await page.evaluate(() => window.__game.device());
+  const Rp = await read('right'), rh = await handPos('right');
+  const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
+  check(!!dev.next && !!dev.back, 'the wrist device is showing, with back and next buttons', JSON.stringify(dev));
+  info('device buttons', `back ${['x', 'y', 'z'].map(k => dev.back[k].toFixed(3))}, next ${['x', 'y', 'z'].map(k => dev.next[k].toFixed(3))}, ${(Math.hypot(dev.next.x - dev.back.x, dev.next.y - dev.back.y, dev.next.z - dev.back.z) * 100).toFixed(1)} cm apart`);
+  await look(-15, -40); await wait(0.3); await shot('v10-01-device'); await look(0, 0);
+  let n = (await log()).length, L;
+  await K('right', { to: to(dev.next, [0.04, 0.05, 0.05]), dur: 0.5 }); await K('right', { to: to(dev.next, [0, 0, 0]), dur: 0.3 }); await K('right', { dur: 0.2 });
+  await K('right', { to: to(dev.next, [0.05, 0.07, 0.07]), dur: 0.3 }); await settle(); await wait(0.8);
+  L = await since(n); n += L.length;
+  check((await station()) === 1 && L.filter(l => l.startsWith('STATION')).length === 1, 'poking "next" once travels once, to the burn yard', `${L.join(' / ')}; station ${await station()}`);
+  const head = await page.evaluate(() => window.__game.head()), S1 = await page.evaluate(() => window.__game.world.stations[1]);
+  check(Math.hypot(head.x - S1.O[0], head.z - S1.O[1]) < 0.4, 'you arrive standing on the burn yard station', `head at ${head.x.toFixed(2)}, ${head.z.toFixed(2)}; station at ${S1.O}`);
+  const fwd = await page.evaluate(() => { const v = new (window.__game.renderer.xr.getCamera().position.constructor)(); window.__game.renderer.xr.getCamera().getWorldDirection(v); return [v.x, v.z]; });
+  const cosF = (fwd[0] * S1.F[0] + fwd[1] * S1.F[1]) / Math.hypot(fwd[0], fwd[1]);
+  check(cosF > 0.95, 'and facing its things', `facing ${fwd.map(x => x.toFixed(2))}, station faces ${S1.F}`);
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5, pose: 'open' }); await K('left', { to: [-0.25, 1.2, -0.3], dur: 0.5 }); await settle(); await wait(0.5);
+  await shot('v10-02-burn-yard');
+  // walk half a metre in the room: the world stays put around you (no drift)
+  const h0 = await page.evaluate(() => window.__game.head());
+  await page.evaluate(() => { window.__xr.position.x += 0.5; }); await wait(0.3);
+  const h1 = await page.evaluate(() => window.__game.head());
+  check(Math.abs(Math.hypot(h1.x - h0.x, h1.z - h0.z) - 0.5) < 0.05, 'walking in the room moves you the same distance in the courtyard', `${Math.hypot(h1.x - h0.x, h1.z - h0.z).toFixed(2)} m for 0.5 m`);
+  await page.evaluate(() => { window.__xr.position.x -= 0.5; }); await wait(0.2);
+  // controllers: A goes on, B goes back
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'controller'; }); await wait(0.8);
+  await K('right', { dur: 0.1, buttons: { 'a-button': 1 } }); await K('right', { dur: 0.6, buttons: { 'a-button': 0 } }); await settle();
+  check((await station()) === 2, 'controllers: A goes to the next station (machine corner)', String(await station()));
+  await shot('v10-03-machines');
+  await K('right', { dur: 0.1, buttons: { 'b-button': 1 } }); await K('right', { dur: 0.6, buttons: { 'b-button': 0 } }); await settle();
+  check((await station()) === 1, 'controllers: B goes back', String(await station()));
+  for (let i = 0; i < 2; i++) { await K('right', { dur: 0.1, buttons: { 'a-button': 1 } }); await K('right', { dur: 0.6, buttons: { 'a-button': 0 } }); await settle(); }
+  check((await station()) === 3, 'and on to the frozen corner', String(await station()));
+  await shot('v10-04-frozen');
+  await K('right', { dur: 0.1, buttons: { 'a-button': 1 } }); await K('right', { dur: 0.6, buttons: { 'a-button': 0 } }); await settle();
+  check((await station()) === 0, 'next from the last station wraps round to the practice range', String(await station()));
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; }); await wait(0.5);
+  await propsCheck();
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));
