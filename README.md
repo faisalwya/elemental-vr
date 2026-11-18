@@ -42,7 +42,8 @@ Every version stays playable at `/vNN/`. The newest is the one being worked on; 
 | [v07](https://faisalwya.github.io/elemental-vr/v07/) | Flamethrower lab. Holding a flame: arm out, palm forward pours it as a jet (about 3 s). Straw dummies and crates burn. Grab and yank with tighter aiming. | Jet "pretty good"; made less trigger-happy (arm fully out, hand fully open). |
 | [v08](https://faisalwya.github.io/elemental-vr/v08/) | The courtyard. Walled courtyard at dusk (torches, banners, trees, mountains, clouds, fireflies, bats, wind and crickets). New things to burn: hay, lanterns, a bell on a rope, fuse to fireworks, ice with a flame inside, barrels, dry grass. Mechanics unchanged. | Better, slightly busy; clouds moved with the head; jet threw a fireball once and sometimes missed. |
 | [v09](https://faisalwya.github.io/elemental-vr/v09/) | Jet refined: a push from in front pours at once and never throws; still pose eased; flame swells before pouring. Calmer courtyard, clouds fixed in the sky. | Jet acceptable for now. Objects still crowded. |
-| [v10](https://faisalwya.github.io/elemental-vr/v10/) | Four stations in a bigger courtyard (practice range, burn yard, machine corner, frozen corner), each about 2 x 2 m with its own reach-in bowl. Wrist device with a map to travel (fade and snap). Mechanics unchanged. | Waiting for playtest. |
+| [v10](https://faisalwya.github.io/elemental-vr/v10/) | Four stations in a bigger courtyard (practice range, burn yard, machine corner, frozen corner), each about 2 x 2 m with its own reach-in bowl. Wrist device with a map to travel (fade and snap). Mechanics unchanged. | Device popped up out of view and the sky was cut off away from the centre: fixed (tap to wake, sky follows you). |
+| [v11](https://faisalwya.github.io/elemental-vr/v11/) | Lock-on comparison: aim A (shoulder-to-hand line) vs aim B (the Quest's pointing ray), switched on the wrist device; visible aim beam, sticky selection, pull speed shown above the hand. | Waiting for playtest. |
 
 ## Repo
 
@@ -59,9 +60,9 @@ No build step: plain ES modules, served as they are by GitHub Pages from `main`.
 
 ## Testing
 
-- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05), `node tests/pull.test.mjs` (v06), `node tests/jet.test.mjs` (v07, v08), `node tests/push.test.mjs` (v09): game logic, no browser.
-- `python3 tests/page_check.py v10 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
-- `node tests/xr_check.mjs v10` (or v05 to v09): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
+- `node tests/gestures.test.mjs`, `node tests/fire.test.mjs` (v04) and `node tests/throw.test.mjs` (v05), `node tests/pull.test.mjs` (v06), `node tests/jet.test.mjs` (v07, v08), `node tests/push.test.mjs` (v09), `node tests/lock.test.mjs` (v11): game logic, no browser.
+- `python3 tests/page_check.py v11 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
+- `node tests/xr_check.mjs v11` (or v05 to v10): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
 - Immersive Web Emulator (Chrome extension) to try a version on the laptop without the headset. Its AI agent bridge lets a local coding agent drive the emulated headset.
 - Performance budget: v08 draws about 175 objects per eye (v10 about 157) at standing height (measured with `renderer.info` in headless Chrome). If the Quest drops frames, cut torches and overhead lanterns first.
 - The headset is the only judge of feel.

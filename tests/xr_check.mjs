@@ -628,7 +628,52 @@ async function scenarioV10() {
   await propsCheck();
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10 })[VER]();
+
+async function scenarioV11() {
+  await scenarioV10();
+  // v11 lock-on: switch aim with the device's A/B button, then check the headset's own ray picks a fire the arm line would not
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; window.__game.travel(0); }); await wait(1);
+  await K('left', { to: [-0.15, 1.25, -0.3], dur: 0.5, pose: 'open' }); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5, pose: 'point' }); await settle(); await wait(0.5);
+  const st = await page.evaluate(() => window.__game.station());
+  const Rp = await read('right'), rh = await handPos('right');
+  const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
+  const wake = await page.evaluate(() => window.__game.wake());
+  await K('right', { to: to(wake, [0.05, 0.08, 0.06]), dur: 0.4 }); await K('right', { to: to(wake, [0, 0.01, 0]), dur: 0.25 }); await K('right', { to: to(wake, [0.04, 0.09, 0.06]), dur: 0.25 }); await settle(); await wait(0.1);
+  const dev = await page.evaluate(() => window.__game.device());
+  const before = await page.evaluate(() => window.__game.aim());
+  if (dev.aim) { await K('right', { to: to(dev.aim, [0.03, 0.05, 0.05]), dur: 0.35 }); await K('right', { to: to(dev.aim, [0, 0, 0]), dur: 0.25 }); await K('right', { dur: 0.15 }); await K('right', { to: to(dev.aim, [0.05, 0.08, 0.07]), dur: 0.3 }); await settle(); }
+  const after = await page.evaluate(() => window.__game.aim());
+  check(st === 0 && before === 'arm' && after === 'ray', 'the device\'s A/B button switches the pull aim to the headset ray', `station ${st}, ${before} -> ${after}, aim button ${dev.aim ? 'shown' : 'missing'}`);
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5, pose: 'open' }); await K('left', { to: [-0.25, 1.2, -0.3], dur: 0.5 }); await settle(); await wait(0.5);
+  // the emulated hand's pointing ray: where does it point with the hand held out flat?
+  await page.evaluate(() => { const h = window.__game.hands.right; h.state = 'empty'; h.fuel = 0; h.timer = 0; });   // empty-handed (it may have passed through a near bowl)
+  await K('right', { to: [0.3, 1.35, -0.45], dur: 0.6, pose: 'open' }); await settle(); await wait(0.4);
+  const ray = await page.evaluate(() => { const h = window.__game.hands.right; return { aiming: h.aiming, from: h.aimFrom, dir: h.aimDir, target: h.target && h.target.id, state: h.state, closed: h.closed, head: window.__game.head() }; });
+  info('right hand', JSON.stringify({ state: ray.state, closed: ray.closed, aiming: ray.aiming, head: ray.head }));
+  info('aim B: the headset ray for an emulated open hand', ray.dir ? `from ${['x', 'y', 'z'].map(k => ray.from[k].toFixed(2))} toward ${['x', 'y', 'z'].map(k => ray.dir[k].toFixed(2))}, selected ${ray.target}` : 'no ray reported');
+  check(!!ray.dir && ray.aiming, 'aim B: the headset reports a pointing ray for the tracked hand, and the game aims along it');
+  // turn the hand toward the 4.5 m fire: with aim B it is selected and can be pulled
+  const fb = await page.evaluate(() => { const b = window.__game.world.bowls.find(b => !b.near && Math.abs(b.d - 4.5) < 0.1); return { id: b.id, pos: [b.pos.x, b.pos.y, b.pos.z] }; });
+  let hit = null;
+  for (const yawDeg of [-70, -60, -50, -40, -30, -20]) {
+    const y = yawDeg * Math.PI / 180;
+    await page.evaluate(q => window.__xr.hands.right.quaternion.set(...q), [0, Math.sin(y / 2), 0, Math.cos(y / 2)]); await wait(0.25);
+    const r = await page.evaluate(() => { const h = window.__game.hands.right; return { target: h.target && h.target.id, dir: h.aimDir }; });
+    if (r.target === fb.id) { hit = yawDeg; break; }
+  }
+  check(hit !== null, 'aim B: turning the hand toward a fire selects it', hit !== null ? `selected the 4.5 m fire with the hand turned ${hit} degrees` : 'never selected');
+  if (hit !== null) {
+    await look(-45, -5); await wait(0.2); await shot('v11-aim-beam'); await look(0, 0);
+    let n = (await log()).length;
+    await K('right', { pose: 'fist', dur: 0.3 }); await settle(); await wait(0.2);
+    await K('right', { to: [0.25, 1.28, -0.12], dur: 0.2, linear: true }); await settle(); await wait(1);
+    const L = await since(n);
+    check(L.some(l => l === 'LOCK right aim ray') && L.includes('TAKE right pull'), 'aim B: close and yank pulls the selected fire', L.join(' / '));
+  }
+  await page.evaluate(() => { window.__xr.hands.right.quaternion.set(0, 0, 0, 1); window.__game.setAim('arm'); });
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));

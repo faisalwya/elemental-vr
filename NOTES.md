@@ -2,6 +2,24 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-18 · Next focus: the hand, the pull
+
+**Faisal:**
+- Wants time on refining the basics: the hand itself (hand tracking, how the flame sits and feels) and the pull.
+- Pull pain points: the lock-on (cannot intuitively select the fire he wants) and the yank (should be more intuitive).
+- Asked what the headset decides vs the code; whether a visible hand wireframe would help; whether Meta's emulator is useful; suggested native Quest screenshots and video for feedback.
+
+**Discussed.**
+- The headset decides what is tracked (in front of you, chest to head height; fast motion blurs; hidden fingers are guessed; no confidence values; system pinch gestures reserved). The code decides how it is read and what feedback you get.
+- Meta's Chrome emulator is the same runtime Claude runs in the cloud: good for flows and bugs, no help with feel (synthetic hands).
+- Faisal challenged a measuring-only version; agreed to skip it. Measurement rides along with each change instead.
+
+**Plan.**
+1. v11, lock-on: A/B of the arm line vs the Quest's own pointing ray, both with a visible aim beam and sticky selection; pull speed shown above the hand.
+2. v12, the yank: speed yank vs a distance pull (or reel it in), tuned from the pull speeds seen in v11.
+3. v13, the hold: hand wireframe, a tracking-lost cue, and how the flame sits and responds in the hand.
+- Native Quest screenshots or video with the on-screen numbers visible are the feedback channel.
+
 ## 2026-11-18 · v10, stations
 
 **Played.** Four stations in a bigger courtyard, travel with the wrist device (fade and snap).
