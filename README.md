@@ -61,4 +61,5 @@ No build step: plain ES modules, served as they are by GitHub Pages from `main`.
 - `python3 tests/page_check.py v08 60`: loads a version in headless Chrome, lets the demo play, reports events and page errors.
 - `node tests/xr_check.mjs v08` (or v05 to v07): enters VR in an emulated Quest 3 (the `iwer` package, installed on first run) with emulated hands and controllers, plays the version's styles and the wrist button, and saves screenshots from eye height. Checks function, not feel.
 - Immersive Web Emulator (Chrome extension) to try a version on the laptop without the headset. Its AI agent bridge lets a local coding agent drive the emulated headset.
+- Performance budget: v08 draws about 175 objects per eye at standing height (measured with `renderer.info` in headless Chrome). If the Quest drops frames, cut torches and overhead lanterns first.
 - The headset is the only judge of feel.
