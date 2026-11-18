@@ -468,6 +468,19 @@ async function scenarioV07() {
   L = await since(n); n += L.length;
   check(L.some(l => l.startsWith('THROW right flick')) && !L.some(l => l.startsWith('JET')), 'the rest of the flame can still be flicked', L.join(' / '));
 
+  // 3b. (v09 on) a quick push from in front of the chest, palm forward: pours at once, no throw
+  if (VER >= 'v09') {
+    await takeNear();
+    await palmTo('right', add3(sh, [0, -0.1, -0.25]), 0.6); await turn('right', fpFwd.q); await wait(0.5);
+    L = await since(n); n += L.length;
+    check(!L.some(l => l.startsWith('JET')), 'palm forward at the chest (arm not out) does not pour yet', L.join(' / '));
+    await palmTo('right', add3(sh, [0, -0.05, -0.55]), 0.12); await wait(0.6);
+    L = await since(n); n += L.length;
+    check(L.includes('JET right push') && !L.some(l => l.startsWith('THROW')), 'a quick push out, palm forward, pours at once and does not throw', L.join(' / '));
+    await turn('right', [0, 0, 0, 1]); await wait(0.3); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.5 }); await settle(); await wait(0.5);
+    L = await since(n); n += L.length;
+  }
+
   // 4. overhand wind-up with the palm forward beside the head: no jet
   await takeNear();
   const WIND = [0.28, 1.62, 0.08];
@@ -543,7 +556,7 @@ async function scenarioV08() {
   info('props after', JSON.stringify(await st()));
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08 })[VER]();
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));

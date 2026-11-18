@@ -2,6 +2,26 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-18 · v08, the courtyard
+
+**Played.** Walled courtyard at dusk with torches, banners, trees, mountains, clouds, fireflies, bats, wind and crickets; new things to burn (hay, lanterns, bell rope, fuse and fireworks, ice, barrels, dry grass). Mechanics as v07.
+
+**Faisal:**
+- The courtyard is better, but feels slightly busy.
+- The clouds seem to move and change perspective as he looks around.
+- Jet needs a better balance between trigger and sensitivity: once a fireball was thrown when he meant to pour, and sometimes he stuck his hand out and it did not pour until he repeated the move.
+
+**Claude's read.**
+- Clouds were sprites, which always turn to face the viewer; in a headset that reads as the sky moving with your head.
+- The fireball: pushing the hand out to pour is a fast forward move, and the flick read it as a throw.
+- The missed pours: v08's still-pose rules (arm 0.38 m out, palm within 45 degrees, fully open, held 0.35 s) were stricter than his natural pose.
+
+**v09 (built the same day).**
+- A push is never a throw: a swing that starts in front of the chest and ends palm forward pours at once (no hold). Throws that wind up beside or behind the head still throw, palm forward or not.
+- Still pose eased halfway back: arm 0.32 m out, palm within about 50 degrees, open hand 0.08, held 0.25 s.
+- The flame swells and brightens while you hold the pose, so you see the pour coming.
+- Calmer courtyard: 30 fireflies (was 70), 2 bats (was 4), 5 clouds fixed in the sky (were 9 sprites).
+
 ## 2026-11-17 · v07, the flamethrower lab
 
 **Played.** Grab and yank (tighter aiming, near bowls reach-in only), flick, and the new jet: holding a flame, arm out, palm forward pours it out for about 3 s. Straw dummies and the crate wall burn.
