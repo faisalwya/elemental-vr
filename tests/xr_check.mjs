@@ -574,15 +574,19 @@ async function scenarioV10() {
   check((await station()) === 0, 'starts at the practice range', String(await station()));
   // the wrist device: shown on the back of the left wrist; poke "next" with the right index finger
   await K('left', { to: [-0.15, 1.25, -0.3], dur: 0.4 }); await K('right', { dur: 0.3, pose: 'point' }); await settle(); await wait(0.3);
+  const hidden = await page.evaluate(() => Object.keys(window.__game.device()).length === 0);
+  check(hidden, 'the wrist device stays hidden while you look ahead, not at your wrist');
+  await look(26, -46); await wait(0.4);   // raise your eyes to the wrist, like checking a watch
   const dev = await page.evaluate(() => window.__game.device());
   const Rp = await read('right'), rh = await handPos('right');
   const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
   check(!!dev.next && !!dev.back, 'the wrist device is showing, with back and next buttons', JSON.stringify(dev));
   info('device buttons', `back ${['x', 'y', 'z'].map(k => dev.back[k].toFixed(3))}, next ${['x', 'y', 'z'].map(k => dev.next[k].toFixed(3))}, ${(Math.hypot(dev.next.x - dev.back.x, dev.next.y - dev.back.y, dev.next.z - dev.back.z) * 100).toFixed(1)} cm apart`);
-  await look(-15, -40); await wait(0.3); await shot('v10-01-device'); await look(0, 0);
+  await shot('v10-01-device');
   let n = (await log()).length, L;
   await K('right', { to: to(dev.next, [0.04, 0.05, 0.05]), dur: 0.5 }); await K('right', { to: to(dev.next, [0, 0, 0]), dur: 0.3 }); await K('right', { dur: 0.2 });
   await K('right', { to: to(dev.next, [0.05, 0.07, 0.07]), dur: 0.3 }); await settle(); await wait(0.8);
+  await look(0, 0); await wait(0.2);
   L = await since(n); n += L.length;
   check((await station()) === 1 && L.filter(l => l.startsWith('STATION')).length === 1, 'poking "next" once travels once, to the burn yard', `${L.join(' / ')}; station ${await station()}`);
   const head = await page.evaluate(() => window.__game.head()), S1 = await page.evaluate(() => window.__game.world.stations[1]);
@@ -597,6 +601,9 @@ async function scenarioV10() {
   await page.evaluate(() => { window.__xr.position.x += 0.5; }); await wait(0.3);
   const h1 = await page.evaluate(() => window.__game.head());
   check(Math.abs(Math.hypot(h1.x - h0.x, h1.z - h0.z) - 0.5) < 0.05, 'walking in the room moves you the same distance in the courtyard', `${Math.hypot(h1.x - h0.x, h1.z - h0.z).toFixed(2)} m for 0.5 m`);
+  // the sky dome travels with you, so it is never cut off by the far limit (v10 first build: a patch following your gaze)
+  const sky = await page.evaluate(() => { const g = window.__game, h = g.head(), far = g.renderer.xr.getCamera().far; let r = 0; g.scenery && g.renderer && (r = 90); return { far, h }; });
+  check(sky.far >= 200, 'the headset draws far enough for the whole sky', `far ${sky.far}`);
   await page.evaluate(() => { window.__xr.position.x -= 0.5; }); await wait(0.2);
   // controllers: A goes on, B goes back
   await page.evaluate(() => { window.__xr.primaryInputMode = 'controller'; }); await wait(0.8);

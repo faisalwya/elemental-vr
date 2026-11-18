@@ -2,6 +2,19 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-18 · v10, stations
+
+**Played.** Four stations in a bigger courtyard, travel with the wrist device (fade and snap).
+
+**Faisal:**
+- The wrist device was erratic as he looked around; sometimes it appeared right in front of him while his hands were out of sight.
+- A spotlight seemed to follow his gaze, mainly when looking at the sky, and only at the other stations, not the practice range.
+
+**Causes (Claude) and fixes, same day, in v10.**
+- Spotlight: the sky dome is 90 m out and the camera drew nothing beyond 90 m. At the practice range (the dome's centre) it fit; at the other stations, up to 15 m off centre, the part of the dome you looked toward was cut away, leaving a round patch of plain background that followed your gaze. Now the sky, stars and moon move with you and the draw limit is 300 m.
+- Device: out of view, the Quest can keep reporting a hand at a guessed spot, and the device followed it. Now it only shows when you look at your wrist like a watch (back of the hand toward your eyes, gaze within about 37 degrees, held 0.15 s), and its buttons only work while it shows.
+- Found by the emulator check after that change: because you now look down at your wrist to press, you arrived turned about 26 degrees. Arrival now uses where your body faces (your heading smoothed over a second, held while you look at the device).
+
 ## 2026-11-18 · v09, jet refined
 
 **Faisal:**

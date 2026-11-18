@@ -187,6 +187,8 @@ export function createScenery(scene, particles) {
   }
 
   /* ---------- per frame ---------- */
+  // the sky, stars and moon travel with you, so they are always the same distance away wherever you stand
+  S.follow = p => { sky.position.set(p.x, 0, p.z); S.stars.position.set(p.x, 0, p.z); moon.position.set(30 + p.x, 38, -55 + p.z); moonGlow.position.copy(moon.position); };
   S.update = (dt, t) => {
     for (const T of S.torches) {
       updateFlame(T.flame, dt, t);

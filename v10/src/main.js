@@ -22,7 +22,7 @@ renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 renderer.xr.enabled = true;
 renderer.xr.setReferenceSpaceType('local-floor');
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(65, 1, 0.05, 90);
+const camera = new THREE.PerspectiveCamera(65, 1, 0.05, 300);   // v10: far enough that the sky is never cut off (it was at 90 m, which showed as a patch following your gaze away from the centre)
 function resize() {
   if (renderer.xr.isPresenting) return;
   const w = window.innerWidth, h = window.innerHeight;
@@ -334,7 +334,7 @@ async function enterVR() {
 }
 renderer.xr.addEventListener('sessionstart', () => {
   world.reset(); world.events.length = 0; resetHands(); document.body.classList.add('in-vr'); audio.ambience(true);
-  baseRef = renderer.xr.getReferenceSpace(); station = 0; device.key = '';
+  baseRef = renderer.xr.getReferenceSpace(); station = 0; device.key = ''; bodyYaw = null;
   for (const k in stats) stats[k] = 0; lastShot = ''; sign.key = '';
 });
 renderer.xr.addEventListener('sessionend', () => { audio.ambience(false); baseRef = null; station = 0; fade.t = -1; world.reset(); resetHands(); demo = createDemo(world); document.body.classList.remove('in-vr'); resize(); });
@@ -382,9 +382,9 @@ function travel(to) {
 function arrive(s) {
   const frame = renderer.xr.getFrame(), vp = frame && frame.getViewerPose(baseRef);
   if (!vp) return;
-  const p = vp.transform.position, o = vp.transform.orientation;
-  const fwd = new V3(0, 0, -1).applyQuaternion(new THREE.Quaternion(o.x, o.y, o.z, o.w));
-  const S = STATIONS[s], D = Math.atan2(S.F[0], S.F[1]) - Math.atan2(fwd.x, fwd.z);
+  const p = vp.transform.position;
+  // face the station's things along where your body faces, not where your head points: you are looking down at your wrist when you press
+  const S = STATIONS[s], D = Math.atan2(S.F[0], S.F[1]) - (bodyYaw === null ? 0 : bodyYaw);
   // world = T(O) R(D) T(-head); the offset space's origin is the inverse of that, expressed in the room's space
   const c = Math.cos(-D), sn = Math.sin(-D), ox = S.O[0] * c + S.O[1] * sn, oz = -S.O[0] * sn + S.O[1] * c;
   const T = new XRRigidTransform({ x: p.x - ox, y: 0, z: p.z - oz }, { x: 0, y: Math.sin(-D / 2), z: 0, w: Math.cos(-D / 2) });
@@ -405,6 +405,19 @@ function stepTravel(dt) {
 /* ---------- loop ---------- */
 let last = 0, simT = 0;
 const devCenters = {};
+let devShow = 0, bodyYaw = null;
+// where your body faces in the room: your head's heading, smoothed over about a second, and held still while you look at the device
+function trackBody(dt, frozen) {
+  const frame = renderer.xr.getFrame(), vp = baseRef && frame && frame.getViewerPose(baseRef);
+  if (!vp) return;
+  const o = vp.transform.orientation, f = new V3(0, 0, -1).applyQuaternion(new THREE.Quaternion(o.x, o.y, o.z, o.w));
+  if (Math.hypot(f.x, f.z) < 0.2) return;   // looking straight up or down says nothing about heading
+  const yaw = Math.atan2(f.x, f.z);
+  if (bodyYaw === null) { bodyYaw = yaw; return; }
+  if (frozen) return;
+  const d = Math.atan2(Math.sin(yaw - bodyYaw), Math.cos(yaw - bodyYaw));
+  bodyYaw += d * (1 - Math.exp(-dt / 1.0));
+}
 resize();
 renderer.setAnimationLoop(ms => {
   const t = ms / 1000, dt = Math.min(0.05, Math.max(0.001, t - last)); last = t;
@@ -422,8 +435,21 @@ renderer.setAnimationLoop(ms => {
 
   // the wrist device rides on the back of your left wrist; your right index finger presses its buttons
   {
-    const L = inputs.left, Rt = inputs.right, at = inVR && L && L.tracked && L.btn;
+    // shown only when you look at your wrist like a watch: back of the hand toward your eyes, your gaze on it, held a moment.
+    // (Out of view, the Quest can keep reporting a hand at a guessed spot; this keeps the device from popping up there.)
+    const L = inputs.left, Rt = inputs.right;
+    let watching = false;
+    if (inVR && L && L.tracked && L.btn) {
+      const toWrist = tmpA.set(L.btn.x - headPos.x, L.btn.y - headPos.y, L.btn.z - headPos.z), d = toWrist.length(); toWrist.normalize();
+      const looked = gazeV.dot(toWrist) > 0.8, near = d > 0.15 && d < 0.75;
+      const backToEyes = L.mode === 'controller' ? true : -(L.normal.x * toWrist.x + L.normal.y * toWrist.y + L.normal.z * toWrist.z) < -0.45;
+      watching = looked && near && backToEyes;
+    }
+    devShow = watching ? Math.min(1, devShow + dt / 0.15) : 0;
+    if (inVR) trackBody(dt, watching || fade.t >= 0);
+    const at = devShow >= 1 && L.btn;
     device.mesh.visible = !!at;
+    if (!at) { devBtns.back.down = devBtns.next.down = false; for (const k in devCenters) delete devCenters[k]; }
     if (at) {
       device.mesh.position.set(at.x, at.y, at.z); device.mesh.lookAt(headPos); device.mesh.updateMatrixWorld(true);
       const tip = Rt && Rt.tracked ? Rt.tip : null;
@@ -451,7 +477,7 @@ renderer.setAnimationLoop(ms => {
   for (const e of world.events) onWorldEvent(e);
   world.events.length = 0;
 
-  scenery.update(dt, t); drawShots(t); particles.update(dt); drawSign();
+  scenery.follow(headPos); scenery.update(dt, t); drawShots(t); particles.update(dt); drawSign();
   if (!inVR) {
     const tall = camera.aspect < 1, sway = Math.sin(t * 0.2) * 0.15;
     if (location.search.includes('eye')) { camera.position.set(0, 1.62, 0.3); camera.lookAt(0.3, 1.5, -4); }
