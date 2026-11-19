@@ -821,7 +821,9 @@ async function scenarioV14() {
   const rr = await read('right'), dist = sit.flame ? Math.hypot(sit.flame.x - rr.palm[0], sit.flame.y - rr.palm[1], sit.flame.z - rr.palm[2]) : 99;
   check(sit.state === 'ready' && dist < 0.065, 'hold B: the flame sits in the palm (within about 5 cm of it)', `${sit.state}, ${Math.round(dist * 100)} cm`);
   const still = await page.evaluate(() => window.__game.flameTilt('right'));
-  await K('right', { to: [0.65, 1.25, -0.35], dur: 0.35, linear: true }); const moving = await page.evaluate(() => window.__game.flameTilt('right')); await settle(); await wait(0.6);
+  const watchTilt = page.evaluate(async () => { let m = 0; const t0 = performance.now(); while (performance.now() - t0 < 6000) { m = Math.max(m, window.__game.flameTilt('right')); await new Promise(r => setTimeout(r, 10)); } return m; });
+  await K('right', { to: [0.65, 1.25, -0.35], dur: 0.35, linear: true }); await settle(); await wait(0.6);
+  const moving = await watchTilt;
   check(still < 0.1 && moving > 0.15, 'hold B: the flame stands upright when still and leans as the hand moves', `still ${still.toFixed(2)} rad, moving ${moving.toFixed(2)} rad`);
   await look(-10, -20); await wait(0.1); await shot('v14-02-held-flame'); await look(0, 0);
   await page.evaluate(() => window.__game.setHold('float')); await empty('right');
@@ -831,8 +833,10 @@ async function scenarioV14() {
   const rotY = (v, deg) => { const a = deg * Math.PI / 180; return [v[0] * Math.cos(a) + v[2] * Math.sin(a), v[1], -v[0] * Math.sin(a) + v[2] * Math.cos(a)]; };
   const out = d => [sh[0] + d[0] * 0.5, sh[1] + d[1] * 0.5, sh[2] + d[2] * 0.5];
   let n = (await log()).length;
-  await palmTo(out(rotY(dirTo(F), -40)), 0.6); await wait(0.3);
-  await K('right', { pose: 'fist', to: (() => { const p = out(rotY(dirTo(F), 40)); return p; })(), dur: 0.3, linear: true }); await settle(); await wait(0.5);
+  // sweep from pointing at the floor, up through the fire, to above it (no other fire on that line), closing the hand as it passes
+  const tilt = (v, dy) => { const w = [v[0], v[1] + dy, v[2]], l = Math.hypot(...w); return w.map(x => x / l); };
+  await palmTo(out(tilt(dirTo(F), -0.9)), 0.6); await wait(0.3);
+  await K('right', { to: out(tilt(dirTo(F), -0.1)), dur: 0.15, linear: true }); await K('right', { pose: 'fist', to: out(tilt(dirTo(F), 0.8)), dur: 0.15, linear: true }); await settle(); await wait(0.5);
   let L = await since(n); n += L.length;
   check(!L.some(l => l.startsWith('LOCK')), 'an arm sweeping past a fire while the hand closes does not grab it', L.join(' / ') || 'nothing grabbed');
   await K('right', { pose: 'open', dur: 0.3 }); await settle(); await empty('right');
