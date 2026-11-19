@@ -27,6 +27,7 @@ export const FT = {
   pullDist: 0.15,       // pull back: how far your fist must come back toward your body
   yankBuffer: 0.12,     // a yank that starts up to this long before your hand counts as closed still counts (v12, v13: 0.25; shorter so a hand already drifting back does not pull at once)
   lockDwell: 0.2,       // v14: a fire must have been your selection this long before closing your hand grabs it (an arm swinging past a fire does not)
+  lockBefore: 0.1,      // ...and at least this long before your hand starts to close (so a sweep past a fire while closing does not grab it)
   stickExit: 4,         // v11: once a fire is selected it stays selected until you aim this many degrees past the cone...
   stickBetter: 4,       // ...or another fire is this many degrees closer to your aim (so the selection does not flicker between two fires)
   aimRange: 12,
@@ -202,7 +203,7 @@ export function stepHand(h, inp, dt, t, sources, emit) {
       if (seen) { if (!h.target || h.target.id !== seen.id) h.targetSince = t; h.target = seen; h.targetT = t; }
       else if (h.target && t - h.targetT > FT.aimGrace && !justClosed) h.target = null;
       // grab: you were aiming at this fire before your hand closed, and have been for lockDwell (the close may come a moment early)
-      if (justClosed && h.target && (h.targetSince ?? t) <= h.closeT && t - h.targetSince >= FT.lockDwell) {
+      if (justClosed && h.target && h.closeT - (h.targetSince ?? t) >= FT.lockBefore && t - h.targetSince >= FT.lockDwell) {
         h.state = 'locked'; h.src = h.target; h.peakPull = 0; h.aiming = false;
         // where the yank is measured from: the hand a moment before it closed, so a grab-and-yank in one motion counts
         const back = h.trail.find(e => t - e.t <= FT.yankBuffer) || h.trail[h.trail.length - 1];
