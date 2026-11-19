@@ -2,6 +2,17 @@
 
 Newest first. What was played, what Faisal felt, what we decided.
 
+## 2026-11-19 · v13, lock-on without a beam
+
+**Played.** Arm-line aim (ray on the post), 12 degree zone, warmer / colder fires, yank A/B, stations organised by what they test (pull lab, throw range, pour yard, playground).
+
+**Faisal:**
+- Yank A (quick tug) is definitely best.
+- The arm line is good.
+- A few pulls triggered unintentionally; overall good.
+
+**Decided.** Pull = arm-line aim + yank A. Yank B and the headset-ray aim are cut (the ray stays only as a code option). Next: find and fix the unintended pulls, then the hold (hand tracking, how the flame sits and feels).
+
 ## 2026-11-18 · v12, the yank
 
 **Played.** Aim B (headset ray) only, yank A/B, fire-based selection feedback with the beam behind a debug button, floor pads.
