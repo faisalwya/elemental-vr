@@ -785,7 +785,72 @@ async function scenarioV13() {
   await look(0, -5); await wait(0.2); await shot('v13-01-pull-lab');
 }
 
-await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11, v12: scenarioV12, v13: scenarioV13 })[VER]();
+
+async function scenarioV14() {
+  await scenarioV07();   // hand, pull (arm line, quick yank) and jet checks
+  await page.evaluate(() => { window.__xr.primaryInputMode = 'hand'; window.__game.travel(0); window.__xr.position.x = 0; window.__xr.position.z = 0; }); await wait(1.2);
+  const st = () => page.evaluate(() => window.__game.station());
+  const empty = side => page.evaluate(s => { const h = window.__game.hands[s]; h.state = 'empty'; h.fuel = 0; h.timer = 0; h.target = null; }, side);
+  check((await st()) === 0, 'back at the pull lab', String(await st()));
+  // the wireframe hands: shown while tracked, fade out when tracking is lost
+  await K('left', { to: [-0.25, 1.2, -0.3], dur: 0.4, pose: 'open' }); await K('right', { to: [0.25, 1.2, -0.3], dur: 0.4, pose: 'open' }); await settle(); await wait(0.4);
+  const a1 = await page.evaluate(() => window.__game.handAlpha());
+  check(a1.every(a => a > 0.9), 'both hands are drawn as a wireframe while tracked', JSON.stringify(a1));
+  await look(0, -35); await wait(0.2); await shot('v14-01-hands'); await look(0, 0);
+  await K('right', { dur: 0.1, connected: false }); await settle(); await wait(0.15);
+  const a2 = await page.evaluate(() => window.__game.handAlpha()); await wait(0.6);
+  const a3 = await page.evaluate(() => window.__game.handAlpha());
+  check(Math.min(...a2) > 0.05 && Math.min(...a2) < 0.95 && Math.min(...a3) < 0.02, 'a hand that loses tracking fades out over a moment, not instantly', `${JSON.stringify(a2)} then ${JSON.stringify(a3)}`);
+  await K('right', { dur: 0.3, connected: true, pose: 'open', to: [0.25, 1.2, -0.3] }); await settle(); await wait(0.5);
+  // the post: hold A / B and debug
+  await K('right', { pose: 'point', dur: 0.3 }); await settle(); await wait(0.2);
+  const Rp = await read('right'), rh = await handPos('right');
+  const off = [0, 1, 2].map(i => Rp.tip[i] - rh[i]), to = (c, d) => [c.x - off[0] + d[0], c.y - off[1] + d[1], c.z - off[2] + d[2]];
+  const press = async c => { await K('right', { to: to(c, [0.05, 0.12, 0.05]), dur: 0.5 }); await K('right', { to: to(c, [0, 0.01, 0]), dur: 0.3 }); await K('right', { dur: 0.15 }); await K('right', { to: to(c, [0.05, 0.14, 0.06]), dur: 0.3 }); await settle(); };
+  const post = Object.fromEntries((await page.evaluate(() => window.__game.post())).map(b => [b.k, b]));
+  const h0 = await page.evaluate(() => window.__game.hold()); await press(post.hold); const h1 = await page.evaluate(() => window.__game.hold());
+  check(h0 === 'float' && h1 === 'held', 'the post\'s hold button switches A (floating) to B (held)', `${h0} -> ${h1}`);
+  await press(post.debug); const d1 = await page.evaluate(() => window.__game.debug()); await press(post.debug); const d2 = await page.evaluate(() => window.__game.debug());
+  check(d1 === true && d2 === false, 'the debug button still turns the beam and numbers on and off', `${d1}, ${d2}`);
+  // B, held: take a flame; it sits in the palm, and leans as the hand moves
+  await K('right', { to: [0.25, 1.2, -0.3], dur: 0.4, pose: 'open' }); await settle(); await empty('right');
+  const nb = await page.evaluate(() => { const b = window.__game.world.bowls.find(b => b.near && b.pos.x > 0 && Math.hypot(b.pos.x, b.pos.z) < 1); return [b.pos.x, b.pos.y, b.pos.z]; });
+  const palmTo = async (p, dur) => { const r = await read('right'), hp = await handPos('right'), o = [r.palm[0] - hp[0], r.palm[1] - hp[1], r.palm[2] - hp[2]]; await K('right', { to: [p[0] - o[0], p[1] - o[1], p[2] - o[2]], dur }); await settle(); };
+  await palmTo([nb[0], nb[1] + 0.25, nb[2] + 0.1], 0.6); await palmTo([nb[0], nb[1] + 0.03, nb[2]], 0.4); await palmTo([0.25, 1.25, -0.35], 0.6); await wait(0.5);
+  const sit = await page.evaluate(() => { const h = window.__game.hands.right, r = window.__joints && window.__joints.right; return { state: h.state, flame: h.flamePos }; });
+  const rr = await read('right'), dist = sit.flame ? Math.hypot(sit.flame.x - rr.palm[0], sit.flame.y - rr.palm[1], sit.flame.z - rr.palm[2]) : 99;
+  check(sit.state === 'ready' && dist < 0.065, 'hold B: the flame sits in the palm (within about 5 cm of it)', `${sit.state}, ${Math.round(dist * 100)} cm`);
+  const still = await page.evaluate(() => window.__game.flameTilt('right'));
+  await K('right', { to: [0.65, 1.25, -0.35], dur: 0.35, linear: true }); const moving = await page.evaluate(() => window.__game.flameTilt('right')); await settle(); await wait(0.6);
+  check(still < 0.1 && moving > 0.15, 'hold B: the flame stands upright when still and leans as the hand moves', `still ${still.toFixed(2)} rad, moving ${moving.toFixed(2)} rad`);
+  await look(-10, -20); await wait(0.1); await shot('v14-02-held-flame'); await look(0, 0);
+  await page.evaluate(() => window.__game.setHold('float')); await empty('right');
+  // fewer accidental pulls: an arm sweeping past a fire while the hand closes does not grab it
+  const F = await page.evaluate(() => { const b = window.__game.world.bowls.find(b => !b.near && Math.abs(b.d - 5.5) < 0.1); return [b.pos.x, b.pos.y, b.pos.z]; });
+  const sh = [0.17, 1.4, 0.05], dirTo = p => { const v = [p[0] - sh[0], p[1] - sh[1], p[2] - sh[2]], l = Math.hypot(...v); return v.map(x => x / l); };
+  const rotY = (v, deg) => { const a = deg * Math.PI / 180; return [v[0] * Math.cos(a) + v[2] * Math.sin(a), v[1], -v[0] * Math.sin(a) + v[2] * Math.cos(a)]; };
+  const out = d => [sh[0] + d[0] * 0.5, sh[1] + d[1] * 0.5, sh[2] + d[2] * 0.5];
+  let n = (await log()).length;
+  await palmTo(out(rotY(dirTo(F), -40)), 0.6); await wait(0.3);
+  await K('right', { pose: 'fist', to: (() => { const p = out(rotY(dirTo(F), 40)); return p; })(), dur: 0.3, linear: true }); await settle(); await wait(0.5);
+  let L = await since(n); n += L.length;
+  check(!L.some(l => l.startsWith('LOCK')), 'an arm sweeping past a fire while the hand closes does not grab it', L.join(' / ') || 'nothing grabbed');
+  await K('right', { pose: 'open', dur: 0.3 }); await settle(); await empty('right');
+  await palmTo(out(dirTo(F)), 0.6); await wait(0.4);
+  await K('right', { pose: 'fist', dur: 0.25 }); await settle(); await wait(0.3);
+  L = await since(n); n += L.length;
+  check(L.some(l => l.startsWith('LOCK right')), 'aiming at a fire and then closing still grabs it', L.join(' / '));
+  await K('right', { pose: 'open', dur: 0.3, to: [0.25, 1.2, -0.3] }); await settle(); await empty('right');
+  // travel by pad, then every reaction at its station
+  const pads = await page.evaluate(() => window.__game.pads()), next = pads.find(P => P.s === 0 && P.to === 1);
+  n = (await log()).length;
+  await page.evaluate(([x, z]) => { window.__xr.position.x = x; window.__xr.position.z = z; }, [next.x, next.z]); await wait(1.7);
+  L = await since(n);
+  check((await st()) === 1 && L.filter(l => l.startsWith('STATION')).length === 1, 'standing on the "next" pad travels once, to the throw range', L.join(' / '));
+  await propsCheck();
+}
+
+await ({ v05: scenarioV05, v06: scenarioV06, v07: scenarioV07, v08: scenarioV08, v09: scenarioV08, v10: scenarioV10, v11: scenarioV11, v12: scenarioV12, v13: scenarioV13, v14: scenarioV14 })[VER]();
 const s = await state();
 info('sign score', JSON.stringify(s.stats));
 check(errors.length === 0, 'no page errors', errors.slice(0, 5).join(' | '));

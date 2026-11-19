@@ -11,6 +11,8 @@ Newest first. What was played, what Faisal felt, what we decided.
 - The arm line is good.
 - A few pulls triggered unintentionally; overall good.
 
+**v14 (built next).** The hold: wireframe hands (bones and joints) that fade out where last seen when tracking is lost; flame A (floating above the palm, as before) vs B (held in the palm: leans and trails as the hand moves, sheds embers when fast, breathes when still). Fewer accidental pulls: a fire must have been aimed at for 0.2 s before the close grabs it (a close up to 0.25 s early still counts), the pre-close yank allowance is 0.12 s (was 0.25), and an empty hand waits 0.7 s after a throw (was 0.35). Faisal will note when any accidental pull happens.
+
 **Decided.** Pull = arm-line aim + yank A. Yank B and the headset-ray aim are cut (the ray stays only as a code option). Next: find and fix the unintended pulls, then the hold (hand tracking, how the flame sits and feels).
 
 ## 2026-11-18 · v12, the yank
